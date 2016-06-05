@@ -19,6 +19,7 @@ namespace DiscordSharp_Starter {
         public static DiscordSharp.Objects.DiscordChannel lastchannel;
         public static bool isBot = true;
         private static string desiredSoundName = null;
+        private static string nextSoundPath = null;
         private static bool soundboardLocked = false;
         private static DiscordChannel lastChannel = null;
 
@@ -133,28 +134,6 @@ namespace DiscordSharp_Starter {
                         eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
                     }
                 }
-                if (eventArgs.MessageText == "!highnoon") {
-                    if (soundboardLocked) {
-                        eventArgs.Channel.SendMessage("wait your turn...");
-                        return;
-                    }
-                    lastChannel = eventArgs.Channel;
-                    desiredSoundName = "!highnoon";
-
-                    DiscordMember author = eventArgs.Author;
-                    DiscordChannel channel = author.CurrentVoiceChannel;
-
-                    if (channel == null) {
-                        eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
-                        return;
-                    }
-
-                    DiscordVoiceConfig voiceConfig = null;
-                    bool clientMuted = false;
-                    bool clientDeaf = false;
-                    client.ConnectToVoiceChannel(channel, voiceConfig, clientMuted, clientDeaf);
-                    soundboardLocked = true;
-                }
                 if (eventArgs.MessageText.StartsWith("!owsb ")) {
                     if (eventArgs.MessageText.Length <= 8) {
                         eventArgs.Channel.SendMessage("you're doing it wrong");
@@ -175,41 +154,132 @@ namespace DiscordSharp_Starter {
                         eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
                         return;
                     }
-
-
+                    
                     string soundFilePath = null;
+                    
+                    var spaceIndex = desiredSoundName.IndexOf(" ");
+                    if (spaceIndex < 1) {
+                        lastChannel.SendMessage("you're doing it wrong");
+                        client.DisconnectFromVoice();
+                        soundboardLocked = false;
+                        return;
+                    }
+                    var category = desiredSoundName.Substring(0, desiredSoundName.IndexOf(" "));
+                    var name = desiredSoundName.Substring(desiredSoundName.IndexOf(" ") + 1);
+                    var basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
+                    var slash = '\\';
 
-                    if (desiredSoundName == "!highnoon") {
-                        Console.WriteLine("!highnoon");
-                        soundFilePath = @"C:\Users\Bundt\Desktop\high noon.mp3";
-                    } else {
-                        var spaceIndex = desiredSoundName.IndexOf(" ");
-                        if (spaceIndex < 1) {
-                            lastChannel.SendMessage("you're doing it wrong");
-                            client.DisconnectFromVoice();
-                            soundboardLocked = false;
-                            return;
+                    // Check category
+                    {
+                        var categories = Directory.GetDirectories(basePath);
+
+                        if (categories.Length < 1) {
+                            throw new Exception("Expected at least one directory in directory");
                         }
-                        var category = desiredSoundName.Substring(0, desiredSoundName.IndexOf(" "));
-                        var name = desiredSoundName.Substring(desiredSoundName.IndexOf(" ") + 1);
 
-                        var basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
-                        var slash = '\\';
+                        categories = categories.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
 
-                        soundFilePath = basePath + category + slash + name + ".mp3";
+                        var bestScore = Compute(category, categories[0]);
+                        var matchedCategory = "";
 
+                        foreach (string str in categories) {
+                            var score = Compute(category, str);
+                            if (score < bestScore) {
+                                bestScore = score;
+                                matchedCategory = str;
+                                if (bestScore == 0) {
+                                    break;
+                                }
+                            }
+                        }
 
-                        Console.WriteLine("looking for " + soundFilePath);
+                        var highestScoreAllowed = 5;
 
-                        if (!File.Exists(soundFilePath)) {
-                            Console.WriteLine("didn't find it...");
+                        if (bestScore > highestScoreAllowed) {
+                            // Score not good enough
+                            Console.WriteLine("Matching score not good enough");
+                            // no match
                             lastChannel.SendMessage("these are not the sounds you're looking for...");
                             client.DisconnectFromVoice();
                             soundboardLocked = false;
                             return;
                         }
-                        Console.WriteLine("Found it!");
+
+                        if (bestScore > 0) {
+                            lastChannel.SendMessage("i think you meant " + matchedCategory);
+                        }
+
+                        category = matchedCategory;
                     }
+                    
+
+                    // Check name
+                    {
+                        var soundNames = Directory.GetFiles(basePath + category);
+
+                        if (soundNames.Length < 1) {
+                            throw new Exception("Expected at least one file in directory");
+                        }
+
+                        //soundNames = soundNames.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
+
+                        for (int i = 0; i < soundNames.Length; i++) {
+                            var newName = "";
+                            var origName = soundNames[i];
+                            newName = origName.Substring(origName.LastIndexOf('\\') + 1);
+                            newName = newName.Substring(0, newName.LastIndexOf('.'));
+                            soundNames[i] = newName;
+                        }
+
+                        var bestScore = Compute(name, soundNames[0]);
+                        var matchedSound = "";
+
+                        foreach (string str in soundNames) {
+                            var score = Compute(name, str);
+                            if (score < bestScore) {
+                                bestScore = score;
+                                matchedSound = str;
+                                if (bestScore == 0) {
+                                    break;
+                                }
+                            }
+                        }
+
+                        var highestScoreAllowed = 5;
+
+                        if (bestScore > highestScoreAllowed) {
+                            // Score not good enough
+                            Console.WriteLine("Matching score not good enough");
+                            // no match
+                            lastChannel.SendMessage("these are not the sounds you're looking for...");
+                            client.DisconnectFromVoice();
+                            soundboardLocked = false;
+                            return;
+                        }
+
+                        if (bestScore > 0) {
+                            lastChannel.SendMessage("i think you meant " + matchedSound);
+                        }
+
+                        name = matchedSound;
+                    }
+                    
+
+
+
+                    soundFilePath = basePath + category + slash + name + ".mp3";
+                        
+                    Console.WriteLine("looking for " + soundFilePath);
+
+                    if (!File.Exists(soundFilePath)) {
+                        Console.WriteLine("didn't find it...");
+                        lastChannel.SendMessage("these are not the sounds you're looking for...");
+                        client.DisconnectFromVoice();
+                        soundboardLocked = false;
+                        return;
+                    }
+                    Console.WriteLine("Found it!");
+                    nextSoundPath = soundFilePath;
 
                     DiscordVoiceConfig voiceConfig = null;
                     bool clientMuted = false;
@@ -226,53 +296,13 @@ namespace DiscordSharp_Starter {
                     client.DisconnectFromVoice();
                     return;
                 }
-                //var rand = new Random();
-                //var bytes = new byte[32000];
-                //rand.NextBytes(bytes);
 
-                /*byte[] sampleBuffer = null;
+                if (String.IsNullOrEmpty(nextSoundPath)) {
 
-                var soundFile = @"C:\Users\Bundt\Desktop\high noon.mp3";
-
-                using (var wfr = new Mp3FileReader(soundFile)){
-                    int offset = 0;
-                    long numBytes = wfr.Length;
-                    sampleBuffer = new byte[numBytes];
-                    wfr.Read(sampleBuffer, offset, (int)numBytes);
-                };*/
-
-                string soundFilePath = null;
-
-
-                if (desiredSoundName == "!highnoon") {
-                    Console.WriteLine("!highnoon");
-                    soundFilePath = @"C:\Users\Bundt\Desktop\high noon.mp3";
-                } else {
-                    desiredSoundName.IndexOf(" ");
-                    var category = desiredSoundName.Substring(0, desiredSoundName.IndexOf(" "));
-                    var name = desiredSoundName.Substring(desiredSoundName.IndexOf(" ") + 1);
-
-                    var basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
-                    var slash = '\\';
-
-                    soundFilePath = basePath + category + slash + name + ".mp3";
-
-
-                    //Console.WriteLine("looking for " + soundFilePath);
-
-                    if (!File.Exists(soundFilePath)) {
-                        Console.WriteLine("didn't find it...");
-                        lastChannel.SendMessage("these are not the sounds you're looking for...");
-                        client.DisconnectFromVoice();
-                        soundboardLocked = false;
-                        return;
-                    }
-                    //Console.WriteLine("Found it!");
                 }
 
-
+                string soundFilePath = nextSoundPath;
                 
-
                 int ms = voiceClient.VoiceConfig.FrameLengthMs;
                 int channels = 1;
                 int sampleRate = 48000;
@@ -299,13 +329,9 @@ namespace DiscordSharp_Starter {
                         mp3Reader.Close();
                     }
                 }
-
-
-
-
-
-                //voiceClient.SendVoice(sampleBuffer);
-                Thread.Sleep(waitTimeMS + 1500);
+                var totalWaitTimeMS = waitTimeMS + 1500;
+                Console.WriteLine("Waiting for " + totalWaitTimeMS + "ms");
+                Thread.Sleep(totalWaitTimeMS);
                 client.DisconnectFromVoice();
                 soundboardLocked = false;
             };
@@ -360,6 +386,48 @@ namespace DiscordSharp_Starter {
 
         public static void randomcat(object channel) {
 
+        }
+
+        /// <summary>
+        /// Compute the distance between two strings.
+        /// http://www.dotnetperls.com/levenshtein
+        /// </summary>
+        public static int Compute(string s, string t) {
+            int n = s.Length;
+            int m = t.Length;
+            int[,] d = new int[n + 1, m + 1];
+
+            // Step 1
+            if (n == 0) {
+                return m;
+            }
+
+            if (m == 0) {
+                return n;
+            }
+
+            // Step 2
+            for (int i = 0; i <= n; d[i, 0] = i++) {
+            }
+
+            for (int j = 0; j <= m; d[0, j] = j++) {
+            }
+
+            // Step 3
+            for (int i = 1; i <= n; i++) {
+                //Step 4
+                for (int j = 1; j <= m; j++) {
+                    // Step 5
+                    int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+
+                    // Step 6
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            }
+            // Step 7
+            return d[n, m];
         }
     }
 }
