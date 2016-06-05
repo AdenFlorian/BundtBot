@@ -11,22 +11,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DiscordSharp_Starter
-{
-    class Program
-    {
+namespace DiscordSharp_Starter {
+    class Program {
+
         public static DiscordSharp.Objects.DiscordChannel lastchannel;
-        public static bool isbot = true;
-        static void Main(string[] args)
-        {
+        public static bool isBot = true;
+
+        const string botToken = "*************************************";
+
+        static void Main(string[] args) {
             // First of all, a DiscordClient will be created, and the email and password will be defined.
             Console.WriteLine("Defining variables");
-            // Fill in token and change isbot to true if you use the API
-            // Else, leave token alone and change isbot to false
-            // But believe me, the API bots are nicer because of a sexy bot tag!
-            DiscordClient client = new DiscordClient("bot token", isbot);
-            client.ClientPrivateInformation.Email = "email";
-            client.ClientPrivateInformation.Password = "pass";
+            
+            DiscordClient client = new DiscordClient(botToken, isBot, true);
 
             // Then, we are going to set up our events before connecting to discord, to make sure nothing goes wrong.
 
@@ -35,33 +32,31 @@ namespace DiscordSharp_Starter
 
             client.Connected += (sender, e) => // Client is connected to Discord
             {
-                Console.WriteLine("Connected! User: " + e.User.Username);
+                Console.WriteLine("oh, look it's " + e.User.Username + " again");
                 // If the bot is connected, this message will show.
                 // Changes to client, like playing game should be called when the client is connected,
                 // just to make sure nothing goes wrong.
-                client.UpdateCurrentGame("DS_starter!", true, "https://github.com/NaamloosDT/DiscordSharp_Starter"); // This will display at "Playing: "
+                //client.UpdateCurrentGame("DS_starter!", true, "https://github.com/NaamloosDT/DiscordSharp_Starter");
+                client.UpdateCurrentGame("all of you"); // This will display at "Playing: "
                 //Whoops! i messed up here. (original: Bot online!\nPress any key to close this window.)
             };
 
 
             client.PrivateMessageReceived += (sender, e) => // Private message has been received
             {
-                if (e.Message == "!help")
-                {
-                    e.Author.SendMessage("This is a private message!");
+                if (e.Message == "!help") {
+                    e.Author.SendMessage("this is a private message, what did you expect");
                     // Because this is a private message, the bot should send a private message back
                     // A private message does NOT have a channel
                 }
-                if (e.Message.StartsWith("join"))
-                {
-                    if (!isbot) {
+                if (e.Message.StartsWith("join")) {
+                    if (!isBot) {
                         string inviteID = e.Message.Substring(e.Message.LastIndexOf('/') + 1);
                         // Thanks to LuigiFan (Developer of DiscordSharp) for this line of code!
                         client.AcceptInvite(inviteID);
                         e.Author.SendMessage("Joined your discord server!");
                         Console.WriteLine("Got join request from " + inviteID);
-                    }else
-                    {
+                    } else {
                         e.Author.SendMessage("Please use this url instead!" +
                             "https://discordapp.com/oauth2/authorize?client_id=[CLIENT_ID]&scope=bot&permissions=0");
                     }
@@ -69,78 +64,104 @@ namespace DiscordSharp_Starter
             };
 
 
-            client.MessageReceived += (sender, e) => // Channel message has been received
+            client.MessageReceived += (sender, eventArgs) => // Channel message has been received
             {
-                if (e.MessageText == "!admin")
-                {
+                if (eventArgs.MessageText == "!admin") {
                     bool isadmin = false;
-                    List<DiscordRole> roles = e.Author.Roles;
-                    foreach(DiscordRole role in roles){
-                        if (role.Name.Contains("Administrator"))
-                        {
+                    List<DiscordRole> roles = eventArgs.Author.Roles;
+                    foreach (DiscordRole role in roles) {
+                        if (role.Name.Contains("Administrator")) {
                             isadmin = true;
                         }
                     }
-                    if (isadmin)
-                    {
-                        e.Channel.SendMessage("Yes, you are! :D");
-                    }
-                    else
-                    {
-                        e.Channel.SendMessage("No, you aren't :c");
+                    if (isadmin) {
+                        eventArgs.Channel.SendMessage("Yes, you are! :D");
+                    } else {
+                        eventArgs.Channel.SendMessage("No, you aren't :c");
                     }
                 }
-                if (e.MessageText == "!help")
-                {
-                    e.Channel.SendMessage("This is a public message!");
+                if (eventArgs.MessageText == "!mod") {
+                    bool ismod = false;
+                    List<DiscordRole> roles = eventArgs.Author.Roles;
+                    foreach (DiscordRole role in roles) {
+                        if (role.Name.Contains("mod")) {
+                            ismod = true;
+                        }
+                    }
+                    if (ismod) {
+                        eventArgs.Channel.SendMessage("Yes, you are! :D");
+                    } else {
+                        eventArgs.Channel.SendMessage("No, you aren't D:");
+                    }
+                }
+                if (eventArgs.MessageText == "!help") {
+                    eventArgs.Channel.SendMessage("...no");
                     // Because this is a public message, 
                     // the bot should send a message to the channel the message was received.
                 }
-                if (e.MessageText == "!cat")
-                {
+                if (eventArgs.MessageText == "!cat") {
                     Thread t = new Thread(new ParameterizedThreadStart(randomcat));
-                    t.Start(e.Channel);
+                    t.Start(eventArgs.Channel);
                     string s;
-                    using (WebClient webclient = new WebClient())
-                    {
+                    using (WebClient webclient = new WebClient()) {
                         s = webclient.DownloadString("http://random.cat/meow");
                         int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
                         int pTo = s.LastIndexOf("\"}");
                         string cat = s.Substring(pFrom, pTo - pFrom);
-                        webclient.DownloadFile("http://random.cat/i/" + cat, "cat.png");
-                        client.AttachFile(e.Channel, "meow!", "cat.png");
+                        var newCatPngName = "cat_" + Guid.NewGuid() + ".png";
+                        Console.WriteLine(newCatPngName);
+                        webclient.DownloadFile("http://random.cat/i/" + cat, newCatPngName);
+                        client.AttachFile(eventArgs.Channel, "i found a cat:", "cat.png");
                     }
+                }
+                if (eventArgs.MessageText == "!spiders") {
+                    DiscordMember author = eventArgs.Author;
+                    DiscordChannel channel = author.CurrentVoiceChannel;
+
+                    if (channel == null) {
+                        eventArgs.Channel.SendMessage("you need to be in a voice channel for me to react");
+                        return;
+                    }
+
+                    DiscordVoiceConfig voiceConfig = new DiscordVoiceConfig {
+                        Channels = 1,
+                        FrameLengthMs = 100,
+                        OpusMode = DiscordSharp.Voice.OpusApplication.MusicOrMixed,
+                        SendOnly = true
+                    };
+                    bool clientMuted = false;
+                    bool clientDeaf = false;
+                    client.ConnectToVoiceChannel(channel, voiceConfig, clientMuted, clientDeaf);
+                    Thread.Sleep(2000);
+                    client.DisconnectFromVoice();
                 }
             };
 
             //  Below: some things that might be nice?
 
             //  This sends a message to every new channel on the server
-            client.ChannelCreated += (sender, e) =>
-                {
-                    e.ChannelCreated.SendMessage("Nice! a new channel has been created!");
-                };
+            client.ChannelCreated += (sender, e) => {
+                e.ChannelCreated.SendMessage("less is more");
+            };
 
             //  When a user joins the server, send a message to them.
-            client.UserAddedToServer += (sender, e) =>
-                {
-                    e.AddedMember.SendMessage("Welcome to my server! rules:");
-                    e.AddedMember.SendMessage("1. be nice!");
-                    e.AddedMember.SendMessage("- Your name!");
-                };
+            client.UserAddedToServer += (sender, e) => {
+                e.AddedMember.SendMessage("welcome to server");
+                e.AddedMember.SendMessage("beware of the airhorns...");
+            };
 
             //  Don't want messages to be removed? this piece of code will
             //  Keep messages for you. Remove if unused :)
-            client.MessageDeleted += (sender, e) =>
-                {
-                    e.Channel.SendMessage("Removing messages has been disabled on this server!");
-                    e.Channel.SendMessage("<@" + e.DeletedMessage.Author.ID + "> sent: " +e.DeletedMessage.Content.ToString());
-                };
+            //client.MessageDeleted += (sender, e) =>
+            //    {
+            //        e.Channel.SendMessage("Removing messages has been disabled on this server!");
+            //        e.Channel.SendMessage("<@" + e.DeletedMessage.Author.ID + "> sent: " +e.DeletedMessage.Content.ToString());
+            //    };
 
-            
+
 
             // Now, try to connect to Discord.
-            try{ 
+            try {
                 // Make sure that IF something goes wrong, the user will be notified.
                 // The SendLoginRequest should be called after the events are defined, to prevent issues.
                 Console.WriteLine("Sending login request");
@@ -149,9 +170,9 @@ namespace DiscordSharp_Starter
                 // Cannot convert from 'method group' to 'ThreadStart', so i removed threading
                 // Pass argument 'true' to use .Net sockets.
                 client.Connect();
-                 // Login request, and then connect using the discordclient i just made.
+                // Login request, and then connect using the discordclient i just made.
                 Console.WriteLine("Client connected!");
-            }catch(Exception e){
+            } catch (Exception e) {
                 Console.WriteLine("Something went wrong!\n" + e.Message + "\nPress any key to close this window.");
             }
 
@@ -163,8 +184,7 @@ namespace DiscordSharp_Starter
             Environment.Exit(0); // Make sure all threads are closed.
         }
 
-        public static void randomcat(object channel)
-        {
+        public static void randomcat(object channel) {
 
         }
     }
