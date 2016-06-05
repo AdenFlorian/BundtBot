@@ -103,6 +103,23 @@ namespace DiscordSharp_Starter {
                     // Because this is a public message, 
                     // the bot should send a message to the channel the message was received.
                 }
+                // This is the original !cat, but it downloads and attaches the cat pic
+                //if (eventArgs.MessageText == "!cat") {
+                //    Thread t = new Thread(new ParameterizedThreadStart(randomcat));
+                //    t.Start(eventArgs.Channel);
+                //    string s;
+                //    using (WebClient webclient = new WebClient()) {
+                //        s = webclient.DownloadString("http://random.cat/meow");
+                //        int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
+                //        int pTo = s.LastIndexOf("\"}");
+                //        string cat = s.Substring(pFrom, pTo - pFrom);
+                //        var newCatPngName = "cat_" + Guid.NewGuid() + ".png";
+                //        Console.WriteLine(newCatPngName);
+                //        webclient.DownloadFile("http://random.cat/i/" + cat, newCatPngName);
+                //        client.AttachFile(eventArgs.Channel, "i found a cat:", "cat.png");
+                //    }
+                //}
+                // This one just puts the url in the message
                 if (eventArgs.MessageText == "!cat") {
                     Thread t = new Thread(new ParameterizedThreadStart(randomcat));
                     t.Start(eventArgs.Channel);
@@ -112,10 +129,8 @@ namespace DiscordSharp_Starter {
                         int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
                         int pTo = s.LastIndexOf("\"}");
                         string cat = s.Substring(pFrom, pTo - pFrom);
-                        var newCatPngName = "cat_" + Guid.NewGuid() + ".png";
-                        Console.WriteLine(newCatPngName);
-                        webclient.DownloadFile("http://random.cat/i/" + cat, newCatPngName);
-                        client.AttachFile(eventArgs.Channel, "i found a cat:", "cat.png");
+                        Console.WriteLine("http://random.cat/i/" + cat);
+                        eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
                     }
                 }
                 if (eventArgs.MessageText == "!highnoon") {
