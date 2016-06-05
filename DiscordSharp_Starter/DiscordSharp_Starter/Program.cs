@@ -6,6 +6,7 @@ using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -17,6 +18,9 @@ namespace DiscordSharp_Starter {
 
         public static DiscordSharp.Objects.DiscordChannel lastchannel;
         public static bool isBot = true;
+        private static string desiredSoundName = null;
+        private static bool soundboardLocked = false;
+        private static DiscordChannel lastChannel = null;
 
         const string botToken = "*************************************";
 
@@ -25,7 +29,6 @@ namespace DiscordSharp_Starter {
             Console.WriteLine("Defining variables");
             
             DiscordClient client = new DiscordClient(botToken, isBot, true);
-
             // Then, we are going to set up our events before connecting to discord, to make sure nothing goes wrong.
 
             Console.WriteLine("Defining Events");
@@ -116,43 +119,87 @@ namespace DiscordSharp_Starter {
                     }
                 }
                 if (eventArgs.MessageText == "!highnoon") {
+                    if (soundboardLocked) {
+                        eventArgs.Channel.SendMessage("wait your turn...");
+                        return;
+                    }
+                    lastChannel = eventArgs.Channel;
+                    desiredSoundName = "!highnoon";
+
                     DiscordMember author = eventArgs.Author;
                     DiscordChannel channel = author.CurrentVoiceChannel;
 
                     if (channel == null) {
-                        eventArgs.Channel.SendMessage("you need to be in a voice channel for me to react");
+                        eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
                         return;
                     }
 
-                    //DiscordVoiceConfig voiceConfig = new DiscordVoiceConfig {
-                    //    Channels = 1,
-                    //    FrameLengthMs = 100,
-                    //    OpusMode = DiscordSharp.Voice.OpusApplication.MusicOrMixed,
-                    //    SendOnly = true
-                    //};
                     DiscordVoiceConfig voiceConfig = null;
                     bool clientMuted = false;
                     bool clientDeaf = false;
                     client.ConnectToVoiceChannel(channel, voiceConfig, clientMuted, clientDeaf);
-                    //Thread.Sleep(5000);
-                    ////while (client.ConnectedToVoice() == false) {
-                    ////    Thread.Sleep(500);
-                    ////}
-                    //DiscordVoiceClient voiceClient = client.GetVoiceClient();
-                    //if (voiceClient == null) {
-                    //    client.DisconnectFromVoice();
-                    //    return;
-                    //}
-                    //var rand = new Random();
-                    //var bytes = new byte[32000];
-                    //rand.NextBytes(bytes);
-                    //voiceClient.SendVoice(bytes);
-                    //Thread.Sleep(2000);
-                    //client.DisconnectFromVoice();
+                    soundboardLocked = true;
+                }
+                if (eventArgs.MessageText.StartsWith("!owsb ")) {
+                    if (eventArgs.MessageText.Length <= 8) {
+                        eventArgs.Channel.SendMessage("you're doing it wrong");
+                        return;
+                    }
+                    if (soundboardLocked) {
+                        eventArgs.Channel.SendMessage("wait your turn...");
+                        return;
+                    }
+                    lastChannel = eventArgs.Channel;
+                    var soundByteName = eventArgs.MessageText.Substring(6);
+                    desiredSoundName = soundByteName;
+
+                    DiscordMember author = eventArgs.Author;
+                    DiscordChannel channel = author.CurrentVoiceChannel;
+
+                    if (channel == null) {
+                        eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                        return;
+                    }
+
+
+                    string soundFilePath = null;
+
+                    if (desiredSoundName == "!highnoon") {
+                        Console.WriteLine("!highnoon");
+                        soundFilePath = @"C:\Users\Bundt\Desktop\high noon.mp3";
+                    } else {
+                        desiredSoundName.IndexOf(" ");
+                        var category = desiredSoundName.Substring(0, desiredSoundName.IndexOf(" "));
+                        var name = desiredSoundName.Substring(desiredSoundName.IndexOf(" ") + 1);
+
+                        var basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
+                        var slash = '\\';
+
+                        soundFilePath = basePath + category + slash + name + ".mp3";
+
+
+                        Console.WriteLine("looking for " + soundFilePath);
+
+                        if (!File.Exists(soundFilePath)) {
+                            Console.WriteLine("didn't find it...");
+                            lastChannel.SendMessage("these are not the sounds you're looking for...");
+                            client.DisconnectFromVoice();
+                            soundboardLocked = false;
+                            return;
+                        }
+                        Console.WriteLine("Found it!");
+                    }
+
+                    DiscordVoiceConfig voiceConfig = null;
+                    bool clientMuted = false;
+                    bool clientDeaf = false;
+                    client.ConnectToVoiceChannel(channel, voiceConfig, clientMuted, clientDeaf);
+                    soundboardLocked = true;
                 }
             };
 
             client.VoiceClientConnected += (sender, e) => {
+                
                 DiscordVoiceClient voiceClient = client.GetVoiceClient();
                 if (voiceClient == null) {
                     client.DisconnectFromVoice();
@@ -173,21 +220,52 @@ namespace DiscordSharp_Starter {
                     wfr.Read(sampleBuffer, offset, (int)numBytes);
                 };*/
 
+                string soundFilePath = null;
+
+
+                if (desiredSoundName == "!highnoon") {
+                    Console.WriteLine("!highnoon");
+                    soundFilePath = @"C:\Users\Bundt\Desktop\high noon.mp3";
+                } else {
+                    desiredSoundName.IndexOf(" ");
+                    var category = desiredSoundName.Substring(0, desiredSoundName.IndexOf(" "));
+                    var name = desiredSoundName.Substring(desiredSoundName.IndexOf(" ") + 1);
+
+                    var basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
+                    var slash = '\\';
+
+                    soundFilePath = basePath + category + slash + name + ".mp3";
+
+
+                    //Console.WriteLine("looking for " + soundFilePath);
+
+                    if (!File.Exists(soundFilePath)) {
+                        Console.WriteLine("didn't find it...");
+                        lastChannel.SendMessage("these are not the sounds you're looking for...");
+                        client.DisconnectFromVoice();
+                        soundboardLocked = false;
+                        return;
+                    }
+                    //Console.WriteLine("Found it!");
+                }
+
 
                 
 
                 int ms = voiceClient.VoiceConfig.FrameLengthMs;
                 int channels = 1;
                 int sampleRate = 48000;
+                int waitTimeMS = 0;
 
                 int blockSize = 48 * 2 * channels * ms; //sample rate * 2 * channels * milliseconds
                 byte[] buffer = new byte[blockSize];
                 var outFormat = new WaveFormat(sampleRate, 16, channels);
                 voiceClient.SetSpeaking(true);
-                using (var mp3Reader = new MediaFoundationReader(@"C:\Users\Bundt\Desktop\high noon.mp3")) {
+                using (var mp3Reader = new MediaFoundationReader(soundFilePath)) {
                     using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat) { ResamplerQuality = 60 }) {
                         int byteCount;
                         while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                            waitTimeMS += ms;
                             if (voiceClient.Connected) {
                                 voiceClient.SendVoice(buffer);
                             } else
@@ -206,8 +284,9 @@ namespace DiscordSharp_Starter {
 
 
                 //voiceClient.SendVoice(sampleBuffer);
-                Thread.Sleep(10000);
+                Thread.Sleep(waitTimeMS + 1500);
                 client.DisconnectFromVoice();
+                soundboardLocked = false;
             };
 
             //  Below: some things that might be nice?
@@ -245,6 +324,7 @@ namespace DiscordSharp_Starter {
                 client.Connect();
                 // Login request, and then connect using the discordclient i just made.
                 Console.WriteLine("Client connected!");
+                client.DisconnectFromVoice();
             } catch (Exception e) {
                 Console.WriteLine("Something went wrong!\n" + e.Message + "\nPress any key to close this window.");
             }
