@@ -2,6 +2,7 @@
 //  https://discord.gg/0oZpaYcAjfvkDuE4
 using DiscordSharp;
 using DiscordSharp.Objects;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -114,7 +115,7 @@ namespace DiscordSharp_Starter {
                         client.AttachFile(eventArgs.Channel, "i found a cat:", "cat.png");
                     }
                 }
-                if (eventArgs.MessageText == "!spiders") {
+                if (eventArgs.MessageText == "!highnoon") {
                     DiscordMember author = eventArgs.Author;
                     DiscordChannel channel = author.CurrentVoiceChannel;
 
@@ -123,18 +124,90 @@ namespace DiscordSharp_Starter {
                         return;
                     }
 
-                    DiscordVoiceConfig voiceConfig = new DiscordVoiceConfig {
-                        Channels = 1,
-                        FrameLengthMs = 100,
-                        OpusMode = DiscordSharp.Voice.OpusApplication.MusicOrMixed,
-                        SendOnly = true
-                    };
+                    //DiscordVoiceConfig voiceConfig = new DiscordVoiceConfig {
+                    //    Channels = 1,
+                    //    FrameLengthMs = 100,
+                    //    OpusMode = DiscordSharp.Voice.OpusApplication.MusicOrMixed,
+                    //    SendOnly = true
+                    //};
+                    DiscordVoiceConfig voiceConfig = null;
                     bool clientMuted = false;
                     bool clientDeaf = false;
                     client.ConnectToVoiceChannel(channel, voiceConfig, clientMuted, clientDeaf);
-                    Thread.Sleep(2000);
-                    client.DisconnectFromVoice();
+                    //Thread.Sleep(5000);
+                    ////while (client.ConnectedToVoice() == false) {
+                    ////    Thread.Sleep(500);
+                    ////}
+                    //DiscordVoiceClient voiceClient = client.GetVoiceClient();
+                    //if (voiceClient == null) {
+                    //    client.DisconnectFromVoice();
+                    //    return;
+                    //}
+                    //var rand = new Random();
+                    //var bytes = new byte[32000];
+                    //rand.NextBytes(bytes);
+                    //voiceClient.SendVoice(bytes);
+                    //Thread.Sleep(2000);
+                    //client.DisconnectFromVoice();
                 }
+            };
+
+            client.VoiceClientConnected += (sender, e) => {
+                DiscordVoiceClient voiceClient = client.GetVoiceClient();
+                if (voiceClient == null) {
+                    client.DisconnectFromVoice();
+                    return;
+                }
+                //var rand = new Random();
+                //var bytes = new byte[32000];
+                //rand.NextBytes(bytes);
+
+                /*byte[] sampleBuffer = null;
+
+                var soundFile = @"C:\Users\Bundt\Desktop\high noon.mp3";
+
+                using (var wfr = new Mp3FileReader(soundFile)){
+                    int offset = 0;
+                    long numBytes = wfr.Length;
+                    sampleBuffer = new byte[numBytes];
+                    wfr.Read(sampleBuffer, offset, (int)numBytes);
+                };*/
+
+
+                
+
+                int ms = voiceClient.VoiceConfig.FrameLengthMs;
+                int channels = 1;
+                int sampleRate = 48000;
+
+                int blockSize = 48 * 2 * channels * ms; //sample rate * 2 * channels * milliseconds
+                byte[] buffer = new byte[blockSize];
+                var outFormat = new WaveFormat(sampleRate, 16, channels);
+                voiceClient.SetSpeaking(true);
+                using (var mp3Reader = new MediaFoundationReader(@"C:\Users\Bundt\Desktop\high noon.mp3")) {
+                    using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat) { ResamplerQuality = 60 }) {
+                        int byteCount;
+                        while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                            if (voiceClient.Connected) {
+                                voiceClient.SendVoice(buffer);
+                            } else
+                                break;
+                        }
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("Voice finished enqueuing");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        resampler.Dispose();
+                        mp3Reader.Close();
+                    }
+                }
+
+
+
+
+
+                //voiceClient.SendVoice(sampleBuffer);
+                Thread.Sleep(10000);
+                client.DisconnectFromVoice();
             };
 
             //  Below: some things that might be nice?
