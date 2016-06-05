@@ -183,7 +183,13 @@ namespace DiscordSharp_Starter {
                         Console.WriteLine("!highnoon");
                         soundFilePath = @"C:\Users\Bundt\Desktop\high noon.mp3";
                     } else {
-                        desiredSoundName.IndexOf(" ");
+                        var spaceIndex = desiredSoundName.IndexOf(" ");
+                        if (spaceIndex < 1) {
+                            lastChannel.SendMessage("you're doing it wrong");
+                            client.DisconnectFromVoice();
+                            soundboardLocked = false;
+                            return;
+                        }
                         var category = desiredSoundName.Substring(0, desiredSoundName.IndexOf(" "));
                         var name = desiredSoundName.Substring(desiredSoundName.IndexOf(" ") + 1);
 
