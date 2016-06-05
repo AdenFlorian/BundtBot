@@ -100,27 +100,10 @@ namespace DiscordSharp_Starter {
                     }
                 }
                 if (eventArgs.MessageText == "!help") {
-                    eventArgs.Channel.SendMessage("...no");
-                    // Because this is a public message, 
-                    // the bot should send a message to the channel the message was received.
+                    eventArgs.Channel.SendMessage("!owsb <character name> <phrase>");
+                    eventArgs.Channel.SendMessage("created by @AdenFlorian");
+                    eventArgs.Channel.SendMessage("https://github.com/AdenFlorian/DiscordSharp_Starter");
                 }
-                // This is the original !cat, but it downloads and attaches the cat pic
-                //if (eventArgs.MessageText == "!cat") {
-                //    Thread t = new Thread(new ParameterizedThreadStart(randomcat));
-                //    t.Start(eventArgs.Channel);
-                //    string s;
-                //    using (WebClient webclient = new WebClient()) {
-                //        s = webclient.DownloadString("http://random.cat/meow");
-                //        int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
-                //        int pTo = s.LastIndexOf("\"}");
-                //        string cat = s.Substring(pFrom, pTo - pFrom);
-                //        var newCatPngName = "cat_" + Guid.NewGuid() + ".png";
-                //        Console.WriteLine(newCatPngName);
-                //        webclient.DownloadFile("http://random.cat/i/" + cat, newCatPngName);
-                //        client.AttachFile(eventArgs.Channel, "i found a cat:", "cat.png");
-                //    }
-                //}
-                // This one just puts the url in the message
                 if (eventArgs.MessageText == "!cat") {
                     Thread t = new Thread(new ParameterizedThreadStart(randomcat));
                     t.Start(eventArgs.Channel);
