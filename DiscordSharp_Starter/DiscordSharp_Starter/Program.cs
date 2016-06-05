@@ -117,6 +117,16 @@ namespace DiscordSharp_Starter {
                         eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
                     }
                 }
+                if (eventArgs.MessageText == "!stop") {
+                    if (client.GetVoiceClient() == null) {
+                        eventArgs.Channel.SendMessage("stop what?");
+                    } else if (client.GetVoiceClient().Connected == false) {
+                        eventArgs.Channel.SendMessage("stop what?");
+                    } else {
+                        eventArgs.Channel.SendMessage("okay... :disappointed_relieved:");
+                        client.DisconnectFromVoice();
+                    }
+                }
                 if (eventArgs.MessageText.StartsWith("!owsb ")) {
                     if (eventArgs.MessageText.Length <= 8) {
                         eventArgs.Channel.SendMessage("you're doing it wrong");
