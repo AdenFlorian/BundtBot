@@ -351,15 +351,19 @@ namespace DiscordSharp_Starter {
                 e.AddedMember.SendMessage("beware of the airhorns...");
             };
 
-            //  Don't want messages to be removed? this piece of code will
-            //  Keep messages for you. Remove if unused :)
-            //client.MessageDeleted += (sender, e) =>
-            //    {
-            //        e.Channel.SendMessage("Removing messages has been disabled on this server!");
-            //        e.Channel.SendMessage("<@" + e.DeletedMessage.Author.ID + "> sent: " +e.DeletedMessage.Content.ToString());
-            //    };
+            client.Connected += (sender, e) => {
+                Console.WriteLine("Client connected for realz this time!");
+            };
 
+            client.GuildCreated += (sender, e) => {
+                Console.WriteLine("Guild created!");
+                e.Server.Channels.First().SendMessage("i am bundtbot destroyer of cakes");
+            };
 
+            client.GuildAvailable += (sender, e) => {
+                Console.WriteLine("Guild available! " + e.Server.Name);
+                e.Server.ChangeMemberNickname(client.Me, "bundtbot");
+            };
 
             // Now, try to connect to Discord.
             try {
