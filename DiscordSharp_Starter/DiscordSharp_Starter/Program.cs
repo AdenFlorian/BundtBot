@@ -103,6 +103,7 @@ namespace DiscordSharp_Starter {
                     eventArgs.Channel.SendMessage("!owsb <character name> <phrase>");
                     eventArgs.Channel.SendMessage("created by @AdenFlorian");
                     eventArgs.Channel.SendMessage("https://github.com/AdenFlorian/DiscordSharp_Starter");
+                    eventArgs.Channel.SendMessage("https://trello.com/b/VKqUgzwV/bundtbot#");
                 }
                 if (eventArgs.MessageText == "!cat") {
                     Thread t = new Thread(new ParameterizedThreadStart(randomcat));
