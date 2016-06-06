@@ -106,28 +106,25 @@ namespace DiscordSharp_Starter {
                     eventArgs.Channel.SendMessage("https://trello.com/b/VKqUgzwV/bundtbot#");
                 }
                 if (eventArgs.MessageText == "!cat") {
-                    Thread t = new Thread(new ParameterizedThreadStart(randomcat));
-                    t.Start(eventArgs.Channel);
-                    string s;
-                    using (WebClient webclient = new WebClient()) {
-                        s = webclient.DownloadString("http://random.cat/meow");
-                        int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
-                        int pTo = s.LastIndexOf("\"}");
-                        string cat = s.Substring(pFrom, pTo - pFrom);
-                        Console.WriteLine("http://random.cat/i/" + cat);
-                        eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
+                    Random rand = new Random();
+                    if (rand.NextDouble() >= 0.5) {
+                        Thread t = new Thread(new ParameterizedThreadStart(randomcat));
+                        t.Start(eventArgs.Channel);
+                        string s;
+                        using (WebClient webclient = new WebClient()) {
+                            s = webclient.DownloadString("http://random.cat/meow");
+                            int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
+                            int pTo = s.LastIndexOf("\"}");
+                            string cat = s.Substring(pFrom, pTo - pFrom);
+                            Console.WriteLine("http://random.cat/i/" + cat);
+                            eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
+                        }
+                    } else {
+                        Dog(eventArgs, "how about a dog instead");
                     }
                 }
                 if (eventArgs.MessageText == "!dog") {
-                    Thread t = new Thread(new ParameterizedThreadStart(randomcat));
-                    t.Start(eventArgs.Channel);
-                    string s;
-                    using (WebClient webclient = new WebClient()) {
-                        s = webclient.DownloadString("http://random.dog/woof");
-                        string dog = s;
-                        Console.WriteLine("http://random.dog/" + dog);
-                        eventArgs.Channel.SendMessage("I found a dog\nhttp://random.dog/" + dog);
-                    }
+                    Dog(eventArgs, "i found a dog");
                 }
                 if (eventArgs.MessageText == "!stop") {
                     if (client.GetVoiceClient() == null) {
@@ -387,6 +384,18 @@ namespace DiscordSharp_Starter {
             // Now to make sure the console doesnt close:
             Console.ReadKey(); // If the user presses a key, the bot will shut down.
             Environment.Exit(0); // Make sure all threads are closed.
+        }
+
+        private static void Dog(DiscordSharp.Events.DiscordMessageEventArgs eventArgs, string message) {
+            Thread t = new Thread(new ParameterizedThreadStart(randomcat));
+            t.Start(eventArgs.Channel);
+            string s;
+            using (WebClient webclient = new WebClient()) {
+                s = webclient.DownloadString("http://random.dog/woof");
+                string dog = s;
+                Console.WriteLine("http://random.dog/" + dog);
+                eventArgs.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
+            }
         }
 
         public static void randomcat(object channel) {
