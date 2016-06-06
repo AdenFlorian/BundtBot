@@ -118,6 +118,17 @@ namespace DiscordSharp_Starter {
                         eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
                     }
                 }
+                if (eventArgs.MessageText == "!dog") {
+                    Thread t = new Thread(new ParameterizedThreadStart(randomcat));
+                    t.Start(eventArgs.Channel);
+                    string s;
+                    using (WebClient webclient = new WebClient()) {
+                        s = webclient.DownloadString("http://random.dog/woof");
+                        string dog = s;
+                        Console.WriteLine("http://random.dog/" + dog);
+                        eventArgs.Channel.SendMessage("I found a dog\nhttp://random.dog/" + dog);
+                    }
+                }
                 if (eventArgs.MessageText == "!stop") {
                     if (client.GetVoiceClient() == null) {
                         eventArgs.Channel.SendMessage("stop what?");
