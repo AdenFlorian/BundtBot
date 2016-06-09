@@ -391,15 +391,20 @@ namespace DiscordSharp_Starter {
         }
 
         private static void Dog(DiscordSharp.Events.DiscordMessageEventArgs eventArgs, string message) {
-            Thread t = new Thread(new ParameterizedThreadStart(randomcat));
-            t.Start(eventArgs.Channel);
-            string s;
-            using (WebClient webclient = new WebClient()) {
-                s = webclient.DownloadString("http://random.dog/woof");
-                string dog = s;
-                Console.WriteLine("http://random.dog/" + dog);
-                eventArgs.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
+            try {
+                Thread t = new Thread(new ParameterizedThreadStart(randomcat));
+                t.Start(eventArgs.Channel);
+                string s;
+                using (WebClient webclient = new MyWebClient()) {
+                    s = webclient.DownloadString("http://random.dog/woof");
+                    string dog = s;
+                    Console.WriteLine("http://random.dog/" + dog);
+                    eventArgs.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
+                }
+            } catch (Exception) {
+                eventArgs.Channel.SendMessage("there are no dogs here, who let them out (random.dog is down :dog: :interrobang:)");
             }
+            
         }
 
         public static void randomcat(object channel) {
