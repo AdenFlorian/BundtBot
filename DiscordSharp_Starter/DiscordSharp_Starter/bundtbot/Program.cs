@@ -1,38 +1,31 @@
-﻿//  If you have any questions or just want to talk, join my server!
-//  https://discord.gg/0oZpaYcAjfvkDuE4
-using DiscordSharp;
-using DiscordSharp.Objects;
+﻿using DiscordSharp;
 using NAudio.Wave;
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace DiscordSharp_Starter {
+namespace DiscordSharp_Starter.bundtbot {
     class Program {
+
         public static bool isBot = true;
         
         readonly static string botToken = ConfigurationManager.AppSettings["botToken"];
         static MessageReceivedProcessor messageRcvdProcessor = new MessageReceivedProcessor();
+
+        static SoundBoard soundBoard = new SoundBoard();
 
         static void Main(string[] args) {
             // First of all, a DiscordClient will be created, and the email and password will be defined.
             Console.WriteLine("Defining variables");
             
             DiscordClient client = new DiscordClient(botToken, isBot, true);
+
             // Then, we are going to set up our events before connecting to discord, to make sure nothing goes wrong.
-
             Console.WriteLine("Defining Events");
-            // find that one you interested in 
 
-            client.Connected += (sender, e) => // Client is connected to Discord
-            {
+            // Client is connected to Discord
+            client.Connected += (sender, e) =>  {
                 Console.WriteLine("oh, look it's " + e.User.Username + " again");
                 // If the bot is connected, this message will show.
                 // Changes to client, like playing game should be called when the client is connected,
@@ -41,9 +34,9 @@ namespace DiscordSharp_Starter {
                 client.UpdateCurrentGame("all of you"); // This will display at "Playing: "
                 //Whoops! i messed up here. (original: Bot online!\nPress any key to close this window.)
             };
-            
-            client.PrivateMessageReceived += (sender, e) => // Private message has been received
-            {
+
+            // Private message has been received
+            client.PrivateMessageReceived += (sender, e) =>  {
                 if (e.Message == "!help") {
                     e.Author.SendMessage("this is a private message, what did you expect");
                     // Because this is a private message, the bot should send a private message back
@@ -62,25 +55,24 @@ namespace DiscordSharp_Starter {
                     }
                 }
             };
-            
-            client.MessageReceived += (sender, eventArgs) => // Channel message has been received
-            {
-                messageRcvdProcessor.ProcessMessage(client, sender, eventArgs);
+
+            // Channel message has been received
+            client.MessageReceived += (sender, eventArgs) => {
+                messageRcvdProcessor.ProcessMessage(client, soundBoard, eventArgs);
             };
 
             client.VoiceClientConnected += (sender, e) => {
-                
                 DiscordVoiceClient voiceClient = client.GetVoiceClient();
                 if (voiceClient == null) {
                     client.DisconnectFromVoice();
                     return;
                 }
 
-                if (String.IsNullOrEmpty(messageRcvdProcessor.nextSoundPath)) {
+                if (String.IsNullOrEmpty(soundBoard.nextSoundPath)) {
 
                 }
 
-                string soundFilePath = messageRcvdProcessor.nextSoundPath;
+                string soundFilePath = soundBoard.nextSoundPath;
                 
                 int ms = voiceClient.VoiceConfig.FrameLengthMs;
                 int channels = 1;
@@ -112,7 +104,7 @@ namespace DiscordSharp_Starter {
                 Console.WriteLine("Waiting for " + totalWaitTimeMS + "ms");
                 Thread.Sleep(totalWaitTimeMS);
                 client.DisconnectFromVoice();
-                messageRcvdProcessor.soundboardLocked = false;
+                soundBoard.locked = false;
             };
             
             //  This sends a message to every new channel on the server

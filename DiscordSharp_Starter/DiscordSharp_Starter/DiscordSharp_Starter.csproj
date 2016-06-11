@@ -41,6 +41,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -57,18 +58,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MessageReceivedProcessor.cs" />
+    <Compile Include="bundtbot\MessageReceivedProcessor.cs" />
+    <Compile Include="bundtbot\ToolBox.cs" />
     <Compile Include="MyWebClient.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Program.cs" />
+    <Compile Include="bundtbot\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="bundtbot\SoundBoard.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
     <Content Include="libsodium.dll" />
     <Content Include="opus.dll" />
   </ItemGroup>
