@@ -58,7 +58,11 @@ namespace DiscordSharp_Starter.bundtbot {
 
             // Channel message has been received
             client.MessageReceived += (sender, eventArgs) => {
-                messageRcvdProcessor.ProcessMessage(client, soundBoard, eventArgs);
+                try {
+                    messageRcvdProcessor.ProcessMessage(client, soundBoard, eventArgs);
+                } catch (Exception) {
+                    eventArgs.Channel.SendMessage("bundtbot is brokebot");
+                }
             };
 
             client.VoiceClientConnected += (sender, e) => {
