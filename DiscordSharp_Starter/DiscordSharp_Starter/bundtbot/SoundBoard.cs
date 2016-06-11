@@ -18,8 +18,8 @@ namespace DiscordSharp_Starter.bundtbot {
                 eventArgs.Channel.SendMessage("wait your turn...");
                 return;
             }
-            lastChannel = eventArgs.Channel;
 
+            lastChannel = eventArgs.Channel;
             DiscordMember author = eventArgs.Author;
             DiscordChannel channel = author.CurrentVoiceChannel;
 
@@ -42,40 +42,45 @@ namespace DiscordSharp_Starter.bundtbot {
 
                 categories = categories.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
 
-                var bestScore = ToolBox.Compute(actor, categories[0]);
-                var matchedCategory = "";
+                if (actor == "#random") {
+                    Random rand = new Random();
+                    var num = rand.Next(0, categories.Length - 1);
+                    actor = categories[num];
+                } else {
+                    var bestScore = ToolBox.Compute(actor, categories[0]);
+                    var matchedCategory = "";
 
-                foreach (string str in categories) {
-                    var score = ToolBox.Compute(actor, str);
-                    if (score < bestScore) {
-                        bestScore = score;
-                        matchedCategory = str;
-                        if (bestScore == 0) {
-                            break;
+                    foreach (string str in categories) {
+                        var score = ToolBox.Compute(actor, str);
+                        if (score < bestScore) {
+                            bestScore = score;
+                            matchedCategory = str;
+                            if (bestScore == 0) {
+                                break;
+                            }
                         }
                     }
+
+                    var highestScoreAllowed = 5;
+
+                    if (bestScore > highestScoreAllowed) {
+                        // Score not good enough
+                        Console.WriteLine("Matching score not good enough");
+                        // no match
+                        lastChannel.SendMessage("these are not the sounds you're looking for...");
+                        client.DisconnectFromVoice();
+                        locked = false;
+                        return;
+                    }
+
+                    if (bestScore > 0) {
+                        lastChannel.SendMessage("i think you meant " + matchedCategory);
+                    }
+
+                    actor = matchedCategory;
                 }
-
-                var highestScoreAllowed = 5;
-
-                if (bestScore > highestScoreAllowed) {
-                    // Score not good enough
-                    Console.WriteLine("Matching score not good enough");
-                    // no match
-                    lastChannel.SendMessage("these are not the sounds you're looking for...");
-                    client.DisconnectFromVoice();
-                    locked = false;
-                    return;
-                }
-
-                if (bestScore > 0) {
-                    lastChannel.SendMessage("i think you meant " + matchedCategory);
-                }
-
-                actor = matchedCategory;
             }
-
-
+            
             // Check name
             {
                 var soundNames = Directory.GetFiles(basePath + actor);
@@ -83,8 +88,6 @@ namespace DiscordSharp_Starter.bundtbot {
                 if (soundNames.Length < 1) {
                     throw new Exception("Expected at least one file in directory");
                 }
-
-                //soundNames = soundNames.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
 
                 for (int i = 0; i < soundNames.Length; i++) {
                     var newName = "";
@@ -94,37 +97,46 @@ namespace DiscordSharp_Starter.bundtbot {
                     soundNames[i] = newName;
                 }
 
-                var bestScore = ToolBox.Compute(soundName, soundNames[0]);
-                var matchedSound = "";
+                // If Random
+                if (soundName == "#random") {
+                    Random rand = new Random();
+                    var num = rand.Next(0, soundNames.Length - 1);
+                    soundName = soundNames[num];
+                } else {
+                    var bestScore = ToolBox.Compute(soundName, soundNames[0]);
+                    var matchedSound = "";
 
-                foreach (string str in soundNames) {
-                    var score = ToolBox.Compute(soundName, str);
-                    if (score < bestScore) {
-                        bestScore = score;
-                        matchedSound = str;
-                        if (bestScore == 0) {
-                            break;
+                    foreach (string str in soundNames) {
+                        var score = ToolBox.Compute(soundName, str);
+                        if (score < bestScore) {
+                            bestScore = score;
+                            matchedSound = str;
+                            if (bestScore == 0) {
+                                break;
+                            }
                         }
                     }
+
+                    var highestScoreAllowed = 5;
+
+                    if (bestScore > highestScoreAllowed) {
+                        // Score not good enough
+                        Console.WriteLine("Matching score not good enough");
+                        // no match
+                        lastChannel.SendMessage("these are not the sounds you're looking for...");
+                        client.DisconnectFromVoice();
+                        locked = false;
+                        return;
+                    }
+
+                    if (bestScore > 0) {
+                        lastChannel.SendMessage("i think you meant " + matchedSound);
+                    }
+
+                    soundName = matchedSound;
                 }
 
-                var highestScoreAllowed = 5;
-
-                if (bestScore > highestScoreAllowed) {
-                    // Score not good enough
-                    Console.WriteLine("Matching score not good enough");
-                    // no match
-                    lastChannel.SendMessage("these are not the sounds you're looking for...");
-                    client.DisconnectFromVoice();
-                    locked = false;
-                    return;
-                }
-
-                if (bestScore > 0) {
-                    lastChannel.SendMessage("i think you meant " + matchedSound);
-                }
-
-                soundName = matchedSound;
+                
             }
 
 
