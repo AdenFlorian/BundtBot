@@ -5,6 +5,7 @@ using DiscordSharp.Objects;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,10 +17,9 @@ using System.Threading.Tasks;
 namespace DiscordSharp_Starter {
     class Program {
         public static bool isBot = true;
-
-        // !!!DON'T COMMIT INTO SOURCE CONTROL!!!
-        const string botToken = "MTg4NzM1NzgzMDQ4MzE0ODgw.CjTaEA.u1YfoznAMq9As18QN8CB41ga7VA";
-        private static MessageReceivedProcessor messageRcvdProcessor = new MessageReceivedProcessor();
+        
+        readonly static string botToken = ConfigurationManager.AppSettings["botToken"];
+        static MessageReceivedProcessor messageRcvdProcessor = new MessageReceivedProcessor();
 
         static void Main(string[] args) {
             // First of all, a DiscordClient will be created, and the email and password will be defined.
