@@ -1,4 +1,5 @@
 ﻿using DiscordSharp;
+using DiscordSharp.Events;
 using NAudio.Wave;
 using System;
 using System.Configuration;
@@ -9,7 +10,8 @@ namespace DiscordSharp_Starter.bundtbot {
     class Program {
 
         public static bool isBot = true;
-        
+        static Random rnd = new Random();
+
         readonly static string botToken = ConfigurationManager.AppSettings["botToken"];
         static MessageReceivedProcessor messageRcvdProcessor = new MessageReceivedProcessor();
 
@@ -122,10 +124,6 @@ namespace DiscordSharp_Starter.bundtbot {
                 e.AddedMember.SendMessage("beware of the airhorns...");
             };
 
-            client.Connected += (sender, e) => {
-                Console.WriteLine("Client connected for realz this time!");
-            };
-
             client.GuildCreated += (sender, e) => {
                 Console.WriteLine("Guild created!");
                 e.Server.Channels.First().SendMessage("i am bundtbot destroyer of cakes");
@@ -134,6 +132,21 @@ namespace DiscordSharp_Starter.bundtbot {
             client.GuildAvailable += (sender, e) => {
                 Console.WriteLine("Guild available! " + e.Server.Name);
                 e.Server.ChangeMemberNickname(client.Me, "bundtbot");
+            };
+
+            client.UserJoinedVoiceChannel += (sender, e) => {
+                Console.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
+                e.Guild.ChangeMemberNickname(client.Me, ":blue_heart: " + e.User.Username);
+                var list = new[] {
+                    Tuple.Create("reinhardt", "hello"),
+                    Tuple.Create("genji", "hello"),
+                    Tuple.Create("mercy", "hello"),
+                    Tuple.Create("torbjorn", "hello"),
+                    Tuple.Create("winston", "hi there")
+                };
+                var i = rnd.Next(list.Count());
+                var x = list[i];
+                soundBoard.Process(client, null, e.Channel, x.Item1, x.Item2);
             };
 
             // Now, try to connect to Discord.

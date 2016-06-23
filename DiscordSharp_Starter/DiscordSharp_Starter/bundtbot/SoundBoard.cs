@@ -14,17 +14,27 @@ namespace DiscordSharp_Starter.bundtbot {
         DiscordChannel lastChannel = null;
 
         public void Process(DiscordClient client, DiscordMessageEventArgs eventArgs, string actor, string soundName) {
+            Process(client, eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, actor, soundName);
+        }
+
+        public void Process(DiscordClient client, DiscordChannel textChannel, DiscordChannel channel, string actor, string soundName) {
+            if (textChannel == null) {
+                textChannel = channel.Parent.Channels.First(x => x.Type == ChannelType.Text);
+                if (textChannel == null) {
+                    Console.WriteLine("somebody broke me :(");
+                    return;
+                }
+            }
+
             if (locked) {
-                eventArgs.Channel.SendMessage("wait your turn...");
+                textChannel.SendMessage("wait your turn...");
                 return;
             }
 
-            lastChannel = eventArgs.Channel;
-            DiscordMember author = eventArgs.Author;
-            DiscordChannel channel = author.CurrentVoiceChannel;
+            lastChannel = textChannel;
 
             if (channel == null) {
-                eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                textChannel.SendMessage("you need to be in a voice channel to hear me roar");
                 return;
             }
 
