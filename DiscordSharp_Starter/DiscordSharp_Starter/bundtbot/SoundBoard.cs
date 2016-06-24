@@ -2,6 +2,7 @@
 using DiscordSharp.Events;
 using DiscordSharp.Objects;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -18,11 +19,11 @@ namespace DiscordSharp_Starter.bundtbot {
             this.client = client;
         }
 
-        public void Process(DiscordMessageEventArgs eventArgs, string actorName, string soundName) {
-            Process(eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, actorName, soundName);
+        public void Process(DiscordMessageEventArgs eventArgs, string actorName, string soundName, IEnumerable<string> args = null) {
+            Process(eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, actorName, soundName, args);
         }
 
-        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, string actorName, string soundName) {
+        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, string actorName, string soundName, IEnumerable<string> args = null) {
             if (textChannel == null) {
                 textChannel = voiceChannel.Parent.Channels.First(x => x.Type == ChannelType.Text);
                 if (textChannel == null) {

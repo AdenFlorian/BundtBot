@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="BundtBot\ConsoleColorHelper.cs" />
     <Compile Include="BundtBot\MessageReceivedProcessor.cs" />
+    <Compile Include="BundtBot\SoundBoardArgs.cs" />
     <Compile Include="BundtBot\ToolBox.cs" />
     <Compile Include="BundtBot\MyWebClient.cs">
       <SubType>Component</SubType>
