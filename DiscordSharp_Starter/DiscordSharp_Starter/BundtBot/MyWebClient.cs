@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace DiscordSharp_Starter {
+namespace DiscordSharp_Starter.BundtBot {
     class MyWebClient : WebClient {
         protected override WebRequest GetWebRequest(Uri uri) {
             WebRequest w = base.GetWebRequest(uri);

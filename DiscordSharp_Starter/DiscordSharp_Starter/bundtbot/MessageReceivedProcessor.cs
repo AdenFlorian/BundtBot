@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace DiscordSharp_Starter.bundtbot {
+namespace DiscordSharp_Starter.BundtBot {
     class MessageReceivedProcessor {
 
         public void ProcessMessage(DiscordClient client, SoundBoard soundBoard, DiscordMessageEventArgs eventArgs) {

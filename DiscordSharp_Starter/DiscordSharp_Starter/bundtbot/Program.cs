@@ -1,13 +1,12 @@
 ﻿using DiscordSharp;
 using DiscordSharp.Objects;
-using DiscordSharp_Starter.BundtBot;
 using NAudio.Wave;
 using System;
 using System.Configuration;
 using System.Linq;
 using System.Threading;
 
-namespace DiscordSharp_Starter.bundtbot {
+namespace DiscordSharp_Starter.BundtBot {
     class Program {
         static MessageReceivedProcessor msgRcvdProcessor = new MessageReceivedProcessor();
         static SoundBoard soundBoard;
@@ -17,6 +16,15 @@ namespace DiscordSharp_Starter.bundtbot {
             var botToken = ConfigurationManager.AppSettings["botToken"];
             DiscordClient client = new DiscordClient(botToken, true, true);
             soundBoard = new SoundBoard(client);
+
+            var bundtbotASCIIART = "";
+            bundtbotASCIIART += @" ______                  _       ______             " + "\n";
+            bundtbotASCIIART += @"(____  \                | |  _  (____  \        _   " + "\n";
+            bundtbotASCIIART += @" ____)  )_   _ ____   __| |_| |_ ____)  ) ___ _| |_ " + "\n";
+            bundtbotASCIIART += @"|  __  (| | | |  _ \ / _  (_   _)  __  ( / _ (_   _)" + "\n";
+            bundtbotASCIIART += @"| |__)  ) |_| | | | ( (_| | | |_| |__)  ) |_| || |_ " + "\n";
+            bundtbotASCIIART += @"|______/|____/|_| |_|\____|  \__)______/ \___/  \__)";
+            ConsoleColored.WriteLine(bundtbotASCIIART, ConsoleColor.Red);
 
             RegisterEventHandlers(client);
 
@@ -39,10 +47,7 @@ namespace DiscordSharp_Starter.bundtbot {
 
             #region ConnectedEvents
             client.Connected += (sender, e) => {
-                var startingColor = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("Connected!");
-                Console.ForegroundColor = startingColor;
+                ConsoleColored.WriteLine("Connected!", ConsoleColor.Green);
                 Console.WriteLine("Calling client.DisconnectFromVoice()");
                 client.DisconnectFromVoice();
                 Console.WriteLine("Calling client.UpdateCurrentGame()");
@@ -76,9 +81,7 @@ namespace DiscordSharp_Starter.bundtbot {
                             } else
                                 break;
                         }
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine("Voice finished enqueuing");
-                        Console.ForegroundColor = ConsoleColor.White;
+                        ConsoleColored.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
                         resampler.Dispose();
                         mp3Reader.Close();
                     }
@@ -131,11 +134,8 @@ namespace DiscordSharp_Starter.bundtbot {
 
             #region GuildEvents
             client.GuildAvailable += (sender, e) => {
-                var startingColor = Console.ForegroundColor;
                 Console.Write("Guild available! ");
-                Console.ForegroundColor = ConsoleColorHelper.GetRoundRobinColor();
-                Console.WriteLine(e.Server.Name);
-                Console.ForegroundColor = startingColor;
+                ConsoleColored.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
                 e.Server.ChangeMemberNickname(client.Me, "bundtbot");
             };
             client.GuildCreated += (sender, e) => {

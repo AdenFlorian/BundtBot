@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DiscordSharp_Starter.bundtbot {
+namespace DiscordSharp_Starter.BundtBot {
     public static class ToolBox {
         /// <summary>
         /// Compute the distance between two strings.
