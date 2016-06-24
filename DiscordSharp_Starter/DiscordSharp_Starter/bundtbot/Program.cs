@@ -1,5 +1,6 @@
 ﻿using DiscordSharp;
-using DiscordSharp.Events;
+using DiscordSharp.Objects;
+using DiscordSharp_Starter.BundtBot;
 using NAudio.Wave;
 using System;
 using System.Configuration;
@@ -8,65 +9,44 @@ using System.Threading;
 
 namespace DiscordSharp_Starter.bundtbot {
     class Program {
-
-        public static bool isBot = true;
-        static Random rnd = new Random();
-
-        readonly static string botToken = ConfigurationManager.AppSettings["botToken"];
-        static MessageReceivedProcessor messageRcvdProcessor = new MessageReceivedProcessor();
-
+        static MessageReceivedProcessor msgRcvdProcessor = new MessageReceivedProcessor();
         static SoundBoard soundBoard = new SoundBoard();
+        static Random random = new Random();
 
         static void Main(string[] args) {
-            // First of all, a DiscordClient will be created, and the email and password will be defined.
-            Console.WriteLine("Defining variables");
-            
-            DiscordClient client = new DiscordClient(botToken, isBot, true);
+            var botToken = ConfigurationManager.AppSettings["botToken"];
+            DiscordClient client = new DiscordClient(botToken, true, true);
 
-            // Then, we are going to set up our events before connecting to discord, to make sure nothing goes wrong.
-            Console.WriteLine("Defining Events");
+            RegisterEventHandlers(client);
 
-            // Client is connected to Discord
-            client.Connected += (sender, e) =>  {
-                Console.WriteLine("oh, look it's " + e.User.Username + " again");
-                // If the bot is connected, this message will show.
-                // Changes to client, like playing game should be called when the client is connected,
-                // just to make sure nothing goes wrong.
-                //client.UpdateCurrentGame("DS_starter!", true, "https://github.com/NaamloosDT/DiscordSharp_Starter");
-                client.UpdateCurrentGame("all of you"); // This will display at "Playing: "
-                //Whoops! i messed up here. (original: Bot online!\nPress any key to close this window.)
+            // Now, try to connect to Discord.
+            try {
+                Console.WriteLine("Calling client.Connect()");
+                client.Connect();
+            } catch (Exception e) {
+                Console.WriteLine("Something went wrong!\n" + e.Message + "\nPress any key to close this window.");
+            }
+
+            // Now to make sure the console doesnt close:
+            Console.ReadKey(); // If the user presses a key, the bot will shut down.
+            Console.WriteLine("\nBuh Bye!");
+            Environment.Exit(0); // Make sure all threads are closed.
+        }
+
+        private static void RegisterEventHandlers(DiscordClient client) {
+            Console.Write("Registering Event Handlers...");
+
+            #region ConnectedEvents
+            client.Connected += (sender, e) => {
+                var startingColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("Connected!");
+                Console.ForegroundColor = startingColor;
+                Console.WriteLine("Calling client.DisconnectFromVoice()");
+                client.DisconnectFromVoice();
+                Console.WriteLine("Calling client.UpdateCurrentGame()");
+                client.UpdateCurrentGame("all of you");
             };
-
-            // Private message has been received
-            client.PrivateMessageReceived += (sender, e) =>  {
-                if (e.Message == "!help") {
-                    e.Author.SendMessage("this is a private message, what did you expect");
-                    // Because this is a private message, the bot should send a private message back
-                    // A private message does NOT have a channel
-                }
-                if (e.Message.StartsWith("join")) {
-                    if (!isBot) {
-                        string inviteID = e.Message.Substring(e.Message.LastIndexOf('/') + 1);
-                        // Thanks to LuigiFan (Developer of DiscordSharp) for this line of code!
-                        client.AcceptInvite(inviteID);
-                        e.Author.SendMessage("Joined your discord server!");
-                        Console.WriteLine("Got join request from " + inviteID);
-                    } else {
-                        e.Author.SendMessage("Please use this url instead!" +
-                            "https://discordapp.com/oauth2/authorize?client_id=[CLIENT_ID]&scope=bot&permissions=0");
-                    }
-                }
-            };
-
-            // Channel message has been received
-            client.MessageReceived += (sender, eventArgs) => {
-                try {
-                    messageRcvdProcessor.ProcessMessage(client, soundBoard, eventArgs);
-                } catch (Exception) {
-                    eventArgs.Channel.SendMessage("bundtbot is brokebot");
-                }
-            };
-
             client.VoiceClientConnected += (sender, e) => {
                 DiscordVoiceClient voiceClient = client.GetVoiceClient();
                 if (voiceClient == null) {
@@ -79,7 +59,7 @@ namespace DiscordSharp_Starter.bundtbot {
                 }
 
                 string soundFilePath = soundBoard.nextSoundPath;
-                
+
                 int ms = voiceClient.VoiceConfig.FrameLengthMs;
                 int channels = 1;
                 int sampleRate = 48000;
@@ -112,28 +92,76 @@ namespace DiscordSharp_Starter.bundtbot {
                 client.DisconnectFromVoice();
                 soundBoard.locked = false;
             };
-            
-            //  This sends a message to every new channel on the server
+            #endregion
+
+            #region MessageEvents
+            client.PrivateMessageDeleted += (sender, e) => {
+
+            };
+            client.PrivateMessageReceived += (sender, e) => {
+                if (e.Message == "!help") {
+                    e.Author.SendMessage("this is a private message, what did you expect");
+                } else if (e.Message.StartsWith("join")) {
+                    e.Author.SendMessage("Please use this url instead!" +
+                        "https://discordapp.com/oauth2/authorize?client_id=[CLIENT_ID]&scope=bot&permissions=0");
+                }
+            };
+            client.MessageDeleted += (sender, e) => {
+
+            };
+            client.MessageEdited += (sender, e) => {
+
+            };
+            client.MessageReceived += (sender, e) => {
+                try {
+                    msgRcvdProcessor.ProcessMessage(client, soundBoard, e);
+                } catch (Exception) {
+                    e.Channel.SendMessage("bundtbot is brokebot");
+                }
+            };
+            #endregion
+
+            #region ChannelEvents
             client.ChannelCreated += (sender, e) => {
                 e.ChannelCreated.SendMessage("less is more");
             };
+            client.ChannelDeleted += (sender, e) => {
+                e.ChannelDeleted.SendMessage("RIP in pieces " + e.ChannelDeleted.Name);
+            };
+            client.ChannelUpdated += (sender, e) => {
+            };
+            #endregion
 
-            //  When a user joins the server, send a message to them.
+            #region GuildEvents
+            client.GuildAvailable += (sender, e) => {
+                var startingColor = Console.ForegroundColor;
+                Console.Write("Guild available! ");
+                Console.ForegroundColor = ConsoleColorHelper.GetRoundRobinColor();
+                Console.WriteLine(e.Server.Name);
+                Console.ForegroundColor = startingColor;
+                e.Server.ChangeMemberNickname(client.Me, "bundtbot");
+            };
+            client.GuildCreated += (sender, e) => {
+                Console.WriteLine("Guild created!");
+            };
+            client.GuildDeleted += (sender, e) => {
+            };
+            client.GuildUpdated += (sender, e) => {
+            };
+            #endregion
+
+            #region GuildMemberEvents
+            client.GuildMemberBanned += (sender, e) => {
+            };
+            client.GuildMemberUpdated += (sender, e) => {
+            };
+            #endregion
+
+            #region UserEvents
             client.UserAddedToServer += (sender, e) => {
                 e.AddedMember.SendMessage("welcome to server");
                 e.AddedMember.SendMessage("beware of the airhorns...");
             };
-
-            client.GuildCreated += (sender, e) => {
-                Console.WriteLine("Guild created!");
-                e.Server.Channels.First().SendMessage("i am bundtbot destroyer of cakes");
-            };
-
-            client.GuildAvailable += (sender, e) => {
-                Console.WriteLine("Guild available! " + e.Server.Name);
-                e.Server.ChangeMemberNickname(client.Me, "bundtbot");
-            };
-
             client.UserJoinedVoiceChannel += (sender, e) => {
                 Console.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
                 e.Guild.ChangeMemberNickname(client.Me, ":blue_heart: " + e.User.Username);
@@ -144,31 +172,24 @@ namespace DiscordSharp_Starter.bundtbot {
                     Tuple.Create("torbjorn", "hello"),
                     Tuple.Create("winston", "hi there")
                 };
-                var i = rnd.Next(list.Count());
+                var i = random.Next(list.Count());
                 var x = list[i];
                 soundBoard.Process(client, null, e.Channel, x.Item1, x.Item2);
             };
+            client.UserLeftVoiceChannel += (sender, e) => {
+            };
+            client.UserRemovedFromServer += (sender, e) => {
+                e.Server.Channels.First().SendMessage("RIP in pieces " + e.MemberRemoved.Username);
+            };
+            client.UserSpeaking += (sender, e) => {
+            };
+            client.UserTypingStart += (sender, e) => {
+            };
+            client.UserUpdate += (sender, e) => {
+            };
+            #endregion
 
-            // Now, try to connect to Discord.
-            try {
-                // Make sure that IF something goes wrong, the user will be notified.
-                // The SendLoginRequest should be called after the events are defined, to prevent issues.
-                Console.WriteLine("Sending login request");
-                client.SendLoginRequest();
-                Console.WriteLine("Connecting client in separate thread");
-                // Cannot convert from 'method group' to 'ThreadStart', so i removed threading
-                // Pass argument 'true' to use .Net sockets.
-                client.Connect();
-                // Login request, and then connect using the discordclient i just made.
-                Console.WriteLine("Client connected!");
-                client.DisconnectFromVoice();
-            } catch (Exception e) {
-                Console.WriteLine("Something went wrong!\n" + e.Message + "\nPress any key to close this window.");
-            }
-            
-            // Now to make sure the console doesnt close:
-            Console.ReadKey(); // If the user presses a key, the bot will shut down.
-            Environment.Exit(0); // Make sure all threads are closed.
+            Console.WriteLine("Done!");
         }
     }
 }
