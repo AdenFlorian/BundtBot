@@ -10,12 +10,13 @@ using System.Threading;
 namespace DiscordSharp_Starter.bundtbot {
     class Program {
         static MessageReceivedProcessor msgRcvdProcessor = new MessageReceivedProcessor();
-        static SoundBoard soundBoard = new SoundBoard();
+        static SoundBoard soundBoard;
         static Random random = new Random();
 
         static void Main(string[] args) {
             var botToken = ConfigurationManager.AppSettings["botToken"];
             DiscordClient client = new DiscordClient(botToken, true, true);
+            soundBoard = new SoundBoard(client);
 
             RegisterEventHandlers(client);
 
@@ -52,10 +53,6 @@ namespace DiscordSharp_Starter.bundtbot {
                 if (voiceClient == null) {
                     client.DisconnectFromVoice();
                     return;
-                }
-
-                if (String.IsNullOrEmpty(soundBoard.nextSoundPath)) {
-
                 }
 
                 string soundFilePath = soundBoard.nextSoundPath;
@@ -163,6 +160,9 @@ namespace DiscordSharp_Starter.bundtbot {
                 e.AddedMember.SendMessage("beware of the airhorns...");
             };
             client.UserJoinedVoiceChannel += (sender, e) => {
+                if (e.User.IsBot) {
+                    return;
+                }
                 Console.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
                 e.Guild.ChangeMemberNickname(client.Me, ":blue_heart: " + e.User.Username);
                 var list = new[] {
@@ -174,7 +174,7 @@ namespace DiscordSharp_Starter.bundtbot {
                 };
                 var i = random.Next(list.Count());
                 var x = list[i];
-                soundBoard.Process(client, null, e.Channel, x.Item1, x.Item2);
+                soundBoard.Process(null, e.Channel, x.Item1, x.Item2);
             };
             client.UserLeftVoiceChannel += (sender, e) => {
             };

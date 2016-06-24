@@ -104,7 +104,7 @@ namespace DiscordSharp_Starter.bundtbot {
 
                 // TODO Validate sound name
                 
-                soundBoard.Process(client, eventArgs, actor, soundName);
+                soundBoard.Process(eventArgs, actor, soundName);
             }
             #endregion
         }

@@ -12,14 +12,19 @@ namespace DiscordSharp_Starter.bundtbot {
         public string nextSoundPath { get; private set; } = null;
 
         DiscordChannel lastChannel = null;
+        DiscordClient client;
 
-        public void Process(DiscordClient client, DiscordMessageEventArgs eventArgs, string actor, string soundName) {
-            Process(client, eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, actor, soundName);
+        public SoundBoard(DiscordClient client) {
+            this.client = client;
         }
 
-        public void Process(DiscordClient client, DiscordChannel textChannel, DiscordChannel channel, string actor, string soundName) {
+        public void Process(DiscordMessageEventArgs eventArgs, string actorName, string soundName) {
+            Process(eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, actorName, soundName);
+        }
+
+        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, string actorName, string soundName) {
             if (textChannel == null) {
-                textChannel = channel.Parent.Channels.First(x => x.Type == ChannelType.Text);
+                textChannel = voiceChannel.Parent.Channels.First(x => x.Type == ChannelType.Text);
                 if (textChannel == null) {
                     Console.WriteLine("somebody broke me :(");
                     return;
@@ -33,7 +38,7 @@ namespace DiscordSharp_Starter.bundtbot {
 
             lastChannel = textChannel;
 
-            if (channel == null) {
+            if (voiceChannel == null) {
                 textChannel.SendMessage("you need to be in a voice channel to hear me roar");
                 return;
             }
@@ -52,16 +57,16 @@ namespace DiscordSharp_Starter.bundtbot {
 
                 categories = categories.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
 
-                if (actor == "#random") {
+                if (actorName == "#random") {
                     Random rand = new Random();
                     var num = rand.Next(0, categories.Length - 1);
-                    actor = categories[num];
+                    actorName = categories[num];
                 } else {
-                    var bestScore = ToolBox.Compute(actor, categories[0]);
+                    var bestScore = ToolBox.Compute(actorName, categories[0]);
                     var matchedCategory = "";
 
                     foreach (string str in categories) {
-                        var score = ToolBox.Compute(actor, str);
+                        var score = ToolBox.Compute(actorName, str);
                         if (score < bestScore) {
                             bestScore = score;
                             matchedCategory = str;
@@ -87,13 +92,13 @@ namespace DiscordSharp_Starter.bundtbot {
                         lastChannel.SendMessage("i think you meant " + matchedCategory);
                     }
 
-                    actor = matchedCategory;
+                    actorName = matchedCategory;
                 }
             }
             
             // Check name
             {
-                var soundNames = Directory.GetFiles(basePath + actor);
+                var soundNames = Directory.GetFiles(basePath + actorName);
 
                 if (soundNames.Length < 1) {
                     throw new Exception("Expected at least one file in directory");
@@ -152,7 +157,7 @@ namespace DiscordSharp_Starter.bundtbot {
 
 
 
-            soundFilePath = basePath + actor + slash + soundName + ".mp3";
+            soundFilePath = basePath + actorName + slash + soundName + ".mp3";
 
             Console.WriteLine("looking for " + soundFilePath);
 
@@ -169,7 +174,7 @@ namespace DiscordSharp_Starter.bundtbot {
             DiscordVoiceConfig voiceConfig = null;
             bool clientMuted = false;
             bool clientDeaf = false;
-            client.ConnectToVoiceChannel(channel, voiceConfig, clientMuted, clientDeaf);
+            client.ConnectToVoiceChannel(voiceChannel, voiceConfig, clientMuted, clientDeaf);
             locked = true;
         }
     }
