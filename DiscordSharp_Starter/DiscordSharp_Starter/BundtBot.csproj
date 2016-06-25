@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DiscordSharp_Starter</RootNamespace>
     <AssemblyName>DiscordSharp_Starter</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,6 +32,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>DiscordSharp_Starter.BundtBot.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NAudio, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
@@ -66,7 +70,7 @@
   <ItemGroup>
     <Compile Include="BundtBot\ConsoleColorHelper.cs" />
     <Compile Include="BundtBot\MessageReceivedProcessor.cs" />
-    <Compile Include="BundtBot\ConsoleColored.cs" />
+    <Compile Include="BundtBot\MyLogger.cs" />
     <Compile Include="BundtBot\SoundBoardArgs.cs" />
     <Compile Include="BundtBot\ToolBox.cs" />
     <Compile Include="BundtBot\MyWebClient.cs">

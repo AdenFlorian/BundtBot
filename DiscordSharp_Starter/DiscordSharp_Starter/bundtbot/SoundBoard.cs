@@ -1,16 +1,18 @@
 ﻿using DiscordSharp;
 using DiscordSharp.Events;
 using DiscordSharp.Objects;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace DiscordSharp_Starter.BundtBot {
     class SoundBoard {
 
         public bool locked = false;
-        public string nextSoundPath { get; private set; } = null;
+        SoundBoardArgs nextSound;
 
         DiscordChannel lastChannel = null;
         DiscordClient client;
@@ -23,11 +25,19 @@ namespace DiscordSharp_Starter.BundtBot {
             this.client = client;
         }
 
-        public void Process(DiscordMessageEventArgs eventArgs, string actorName, string soundName, IEnumerable<string> args = null) {
-            Process(eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, actorName, soundName, args);
+        public void Process(DiscordMessageEventArgs eventArgs, SoundBoardArgs soundBoardArgs) {
+            Process(eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, soundBoardArgs);
         }
 
-        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, string actorName, string soundName, IEnumerable<string> args = null) {
+        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, string actorName, string soundName) {
+            var soundBoardArgs = new SoundBoardArgs {
+                actorName = actorName,
+                soundName = soundName
+            };
+            Process(textChannel, voiceChannel, soundBoardArgs);
+        }
+
+        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, SoundBoardArgs soundBoardArgs) {
             if (textChannel == null) {
                 textChannel = voiceChannel.Parent.Channels.First(x => x.Type == ChannelType.Text);
                 if (textChannel == null) {
@@ -50,29 +60,74 @@ namespace DiscordSharp_Starter.BundtBot {
 
             string soundFilePath = null;
 
-            CheckActorName(ref actorName);
+            CheckActorName(ref soundBoardArgs.actorName);
 
-            CheckSoundName(ref soundName, actorName);
+            CheckSoundName(ref soundBoardArgs.soundName, soundBoardArgs.actorName);
             
-            soundFilePath = basePath + actorName + slash + soundName + ".mp3";
+            soundFilePath = basePath + soundBoardArgs.actorName + slash + soundBoardArgs.soundName + ".mp3";
 
-            Console.Write("looking for " + soundFilePath);
+            Console.Write("looking for " + soundFilePath + "\t");
 
             if (!File.Exists(soundFilePath)) {
-                ConsoleColored.WriteLine("didn't find it...", ConsoleColor.Red);
+                MyLogger.WriteLine("didn't find it...", ConsoleColor.Red);
                 lastChannel.SendMessage("these are not the sounds you're looking for...");
                 client.DisconnectFromVoice();
                 locked = false;
                 return;
             }
-            ConsoleColored.WriteLine("Found it!", ConsoleColor.Green);
-            nextSoundPath = soundFilePath;
+
+            MyLogger.WriteLine("Found it!", ConsoleColor.Green);
+            soundBoardArgs.soundPath = soundFilePath;
+            nextSound = soundBoardArgs;
 
             DiscordVoiceConfig voiceConfig = null;
             bool clientMuted = false;
             bool clientDeaf = false;
             client.ConnectToVoiceChannel(voiceChannel, voiceConfig, clientMuted, clientDeaf);
             locked = true;
+        }
+
+        public void OnConnectedToVoiceChannel(DiscordVoiceClient voiceClient) {
+
+            string soundFilePath = nextSound.soundPath;
+
+            int ms = voiceClient.VoiceConfig.FrameLengthMs;
+            int channels = 1;
+            int sampleRate = 48000;
+            int waitTimeMS = 0;
+
+            int blockSize = 48 * 2 * channels * ms; //sample rate * 2 * channels * milliseconds
+            byte[] buffer = new byte[blockSize];
+            var outFormat = new WaveFormat(sampleRate, 16, channels);
+            voiceClient.SetSpeaking(true);
+            using (var mp3Reader = new MediaFoundationReader(soundFilePath)) {
+                using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat) { ResamplerQuality = 60 }) {
+                    int byteCount;
+                    while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                        waitTimeMS += ms;
+                        // Limit sound length
+                        if (nextSound.length_ms > 0 &&
+                            waitTimeMS > nextSound.length_ms) {
+                            break;
+                        }
+                        if (voiceClient.Connected) {
+                            voiceClient.SendVoice(buffer);
+                        } else
+                            break;
+                    }
+                    MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
+                    resampler.Dispose();
+                    mp3Reader.Close();
+                }
+            }
+
+            int paddingMS = 1000;
+            var totalWaitTimeMS = waitTimeMS + paddingMS;
+
+            MyLogger.WriteLine("Waiting for " + totalWaitTimeMS + "ms");
+            Thread.Sleep(totalWaitTimeMS);
+            client.DisconnectFromVoice();
+            locked = false;
         }
 
         void CheckActorName(ref string actorName) {

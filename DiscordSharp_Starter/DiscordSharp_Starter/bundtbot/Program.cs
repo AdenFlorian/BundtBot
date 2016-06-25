@@ -1,10 +1,7 @@
 ﻿using DiscordSharp;
-using DiscordSharp.Objects;
-using NAudio.Wave;
 using System;
 using System.Configuration;
 using System.Linq;
-using System.Threading;
 
 namespace DiscordSharp_Starter.BundtBot {
     class Program {
@@ -24,33 +21,35 @@ namespace DiscordSharp_Starter.BundtBot {
             bundtbotASCIIART += @"|  __  (| | | |  _ \ / _  (_   _)  __  ( / _ (_   _)" + "\n";
             bundtbotASCIIART += @"| |__)  ) |_| | | | ( (_| | | |_| |__)  ) |_| || |_ " + "\n";
             bundtbotASCIIART += @"|______/|____/|_| |_|\____|  \__)______/ \___/  \__)";
-            ConsoleColored.WriteLine(bundtbotASCIIART, ConsoleColor.Red);
+            MyLogger.WriteLine(bundtbotASCIIART, ConsoleColor.Red);
 
             RegisterEventHandlers(client);
 
             // Now, try to connect to Discord.
             try {
-                Console.WriteLine("Calling client.Connect()");
+                MyLogger.WriteLine("Calling client.Connect()");
                 client.Connect();
             } catch (Exception e) {
-                Console.WriteLine("Something went wrong!\n" + e.Message + "\nPress any key to close this window.");
+                MyLogger.WriteLine("Something went wrong!", ConsoleColor.Yellow);
+                MyLogger.WriteLine(e.Message, ConsoleColor.Red);
+                MyLogger.WriteLine("Press any key to close this window.");
             }
 
             // Now to make sure the console doesnt close:
             Console.ReadKey(); // If the user presses a key, the bot will shut down.
-            Console.WriteLine("\nBuh Bye!");
+            MyLogger.WriteLine("\nBuh Bye!");
             Environment.Exit(0); // Make sure all threads are closed.
         }
 
         private static void RegisterEventHandlers(DiscordClient client) {
-            Console.Write("Registering Event Handlers...");
+            MyLogger.Write("Registering Event Handlers...");
 
             #region ConnectedEvents
             client.Connected += (sender, e) => {
-                ConsoleColored.WriteLine("Connected!", ConsoleColor.Green);
-                Console.WriteLine("Calling client.DisconnectFromVoice()");
+                MyLogger.WriteLine("Connected!", ConsoleColor.Green);
+                MyLogger.WriteLine("Calling client.DisconnectFromVoice()");
                 client.DisconnectFromVoice();
-                Console.WriteLine("Calling client.UpdateCurrentGame()");
+                MyLogger.WriteLine("Calling client.UpdateCurrentGame()");
                 client.UpdateCurrentGame("all of you");
             };
             client.VoiceClientConnected += (sender, e) => {
@@ -60,37 +59,7 @@ namespace DiscordSharp_Starter.BundtBot {
                     return;
                 }
 
-                string soundFilePath = soundBoard.nextSoundPath;
-
-                int ms = voiceClient.VoiceConfig.FrameLengthMs;
-                int channels = 1;
-                int sampleRate = 48000;
-                int waitTimeMS = 0;
-
-                int blockSize = 48 * 2 * channels * ms; //sample rate * 2 * channels * milliseconds
-                byte[] buffer = new byte[blockSize];
-                var outFormat = new WaveFormat(sampleRate, 16, channels);
-                voiceClient.SetSpeaking(true);
-                using (var mp3Reader = new MediaFoundationReader(soundFilePath)) {
-                    using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat) { ResamplerQuality = 60 }) {
-                        int byteCount;
-                        while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
-                            waitTimeMS += ms;
-                            if (voiceClient.Connected) {
-                                voiceClient.SendVoice(buffer);
-                            } else
-                                break;
-                        }
-                        ConsoleColored.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
-                        resampler.Dispose();
-                        mp3Reader.Close();
-                    }
-                }
-                var totalWaitTimeMS = waitTimeMS + 1500;
-                Console.WriteLine("Waiting for " + totalWaitTimeMS + "ms");
-                Thread.Sleep(totalWaitTimeMS);
-                client.DisconnectFromVoice();
-                soundBoard.locked = false;
+                soundBoard.OnConnectedToVoiceChannel(voiceClient);
             };
             #endregion
 
@@ -134,12 +103,12 @@ namespace DiscordSharp_Starter.BundtBot {
 
             #region GuildEvents
             client.GuildAvailable += (sender, e) => {
-                Console.Write("Guild available! ");
-                ConsoleColored.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
+                MyLogger.Write("Guild available! ");
+                MyLogger.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
                 e.Server.ChangeMemberNickname(client.Me, "bundtbot");
             };
             client.GuildCreated += (sender, e) => {
-                Console.WriteLine("Guild created!");
+                MyLogger.WriteLine("Guild created!");
             };
             client.GuildDeleted += (sender, e) => {
             };
@@ -163,7 +132,7 @@ namespace DiscordSharp_Starter.BundtBot {
                 if (e.User.IsBot) {
                     return;
                 }
-                Console.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
+                MyLogger.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
                 e.Guild.ChangeMemberNickname(client.Me, ":blue_heart: " + e.User.Username);
                 var list = new[] {
                     Tuple.Create("reinhardt", "hello"),
@@ -189,7 +158,7 @@ namespace DiscordSharp_Starter.BundtBot {
             };
             #endregion
 
-            Console.WriteLine("Done!");
+            MyLogger.WriteLine("Done!");
         }
     }
 }

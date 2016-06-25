@@ -75,63 +75,22 @@ namespace DiscordSharp_Starter.BundtBot {
 
             if (eventArgs.MessageText.StartsWith("!owsb ") ||
                 eventArgs.MessageText.StartsWith("!sb")) {
-                string actorName;
-                string soundName;
-                string commandString = eventArgs.MessageText;
-
-                int[] myints = new[] { 1, 2, 3, 4, 5 };
-
-                // Command should have 3 parts each separated by a space
-                // 1. !owsb (or !sb)
-                // 2. actor
-                // 3. the sound name
-                // So, if we split by spaces, we should have at least 3 parts
-                commandString = commandString.Trim();
-                List<string> parts = new List<string>(commandString.Split(' '));
-
-                // Filter out the arguments
-                var args = ExtractArgs(parts);
-
-                if (parts.Count == 1 &&
-                    parts[0] == "!sb") {
-                    parts.Add("#random");
-                    parts.Add("#random");
-                }
-
-                if (parts.Count == 2 &&
-                    parts[1] == "#random") {
-                    parts.Add("#random");
-                }
-
-                if (parts.Count < 3) {
+                SoundBoardArgs soundBoardArgs = null;
+                try {
+                    soundBoardArgs = new SoundBoardArgs(eventArgs.MessageText);
+                } catch (Exception e) {
                     eventArgs.Channel.SendMessage("you're doing it wrong");
+                    eventArgs.Channel.SendMessage(e.Message);
+                }
+
+                if (soundBoardArgs == null) {
+                    eventArgs.Channel.SendMessage("you're doing it wrong (or something broke)");
                     return;
                 }
 
-                actorName = parts[1];
-                // TODO Validate Actor
-
-                soundName = parts[2];
-
-                if (parts.Count > 3) {
-                    for (int i = 3; i < parts.Count; i++) {
-                        soundName += " " + parts[i];
-                    }
-                }
-
-                // TODO Validate sound name
-
-                soundBoard.Process(eventArgs, actorName, soundName, args);
+                soundBoard.Process(eventArgs, soundBoardArgs);
             }
             #endregion
-        }
-
-        private static IEnumerable<string> ExtractArgs(List<string> parts) {
-            parts.Reverse();
-            var args = parts.TakeWhile(x => x.StartsWith("--") && x.Length > 2);
-            parts.RemoveRange(0, args.Count());
-            parts.Reverse();
-            return args;
         }
 
         private static void Dog(DiscordSharp.Events.DiscordMessageEventArgs eventArgs, string message) {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordSharp_Starter.BundtBot {
-    public static class ConsoleColored {
+    public static class MyLogger {
         public static void Write(string message, ConsoleColor color) {
             var startingColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
@@ -17,6 +17,12 @@ namespace DiscordSharp_Starter.BundtBot {
             Console.ForegroundColor = color;
             Console.WriteLine(message);
             Console.ForegroundColor = startingColor;
+        }
+        public static void Write(string message) {
+            Console.Write(message);
+        }
+        public static void WriteLine(string message) {
+            Console.WriteLine(message);
         }
     }
 }
