@@ -102,8 +102,10 @@ namespace DiscordSharp_Starter.BundtBot {
             voiceClient.SetSpeaking(true);
             using (var mp3Reader = new MediaFoundationReader(soundFilePath)) {
                 // Just an extra check to keep the bot from blowing people ears out
-                if (nextSound.volume > 1) {
+                if (nextSound.volume > 1.1f) {
                     throw new ArgumentException("Voluem should never be greater than 1!");
+                } else if (nextSound.volume == 0) {
+                    nextSound.volume = 1;
                 }
                 using (var waveChannel32 = new WaveChannel32(mp3Reader, nextSound.volume, 0f) { PadWithZeroes = false }) {
                     using (var resampler = new MediaFoundationResampler(waveChannel32, outFormat) { ResamplerQuality = 60 }) {

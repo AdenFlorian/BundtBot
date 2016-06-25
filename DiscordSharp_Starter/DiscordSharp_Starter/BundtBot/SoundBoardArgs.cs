@@ -57,23 +57,24 @@ namespace DiscordSharp_Starter.BundtBot {
                     try {
                         length_seconds = float.Parse(arg.Substring(9));
                     } catch (Exception) {
-                        throw new ArgumentException("badly formed argument value");
+                        throw new ArgumentException("badly formed length value");
                     }
                     if (length_seconds <= 0) {
-                        throw new ArgumentException("invalid argument value, must be a positive foat");
+                        throw new ArgumentException("invalid length value, must be a positive foat");
                     }
                     MyLogger.WriteLine("Parsed " + arg + " into " + length_seconds + " seconds");
                 } else if (arg.StartsWith("--volume:") &&
                     arg.Length > 9) {
                     try {
-                        volume = float.Parse(arg.Substring(9));
+                        var intVolume = int.Parse(arg.Substring(9));
+                        if (intVolume < 1 || intVolume > 11) {
+                            throw new ArgumentException("invalid volume, must be an integer from 1 to 10");
+                        }
+                        volume = (float)intVolume / 10f;
+                        MyLogger.WriteLine("Parsed " + arg + " into " + volume);
                     } catch (Exception) {
-                        throw new ArgumentException("badly formed argument value");
+                        throw new ArgumentException("badly formed volume value");
                     }
-                    if (volume <= 0 || volume > 1) {
-                        throw new ArgumentException("invalid argument value, must be a positive foat (0 < volume <= 1)");
-                    }
-                    MyLogger.WriteLine("Parsed " + arg + " into " + volume);
                 } else {
                     throw new ArgumentException("argument not found");
                 }
