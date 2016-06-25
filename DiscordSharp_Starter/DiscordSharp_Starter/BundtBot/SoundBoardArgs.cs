@@ -6,11 +6,19 @@ using System.Threading.Tasks;
 
 namespace DiscordSharp_Starter.BundtBot {
     class SoundBoardArgs {
+        #region Required
         public string actorName;
         public string soundName;
         public string soundPath;
-        public float volume;
-        public float length_seconds;
+        #endregion
+
+        #region Optional
+        public bool echo = false;
+        public int echoLength = 0;
+        public float echoFactor = 0;
+        public float volume = 0f;
+        public float length_seconds = 0f;
+        #endregion
 
         public int length_ms {
             get { return (int)(length_seconds * 1000); }
@@ -75,6 +83,25 @@ namespace DiscordSharp_Starter.BundtBot {
                     } catch (Exception) {
                         throw new ArgumentException("badly formed volume value");
                     }
+                } else if (arg.StartsWith("--echo")) {
+                    echo = true;
+                    if (arg == "--echo") {
+                        MyLogger.WriteLine("Parsed " + arg);
+                    } else {
+                        var parts = arg.Split(':');
+                        if (parts.Count() > 1) {
+                            echoLength = (int)(float.Parse(parts[1]) * 1000);
+                            if (echoLength <= 0 || echoLength > 50000) {
+                                throw new ArgumentException("bad echo length");
+                            }
+                            if (parts.Count() > 2) {
+                                echoFactor = (float)int.Parse(parts[2]) / 10;
+                                if (echoFactor <= 0 || echoFactor > 1f) {
+                                    throw new ArgumentException("bad echo factor");
+                                }
+                            }
+                        }
+                    }
                 } else {
                     throw new ArgumentException("argument not found");
                 }
@@ -88,13 +115,8 @@ namespace DiscordSharp_Starter.BundtBot {
                 words.Add("#random");
             }
 
-            if (words.Count == 2 &&
-                words[1] == "#random") {
+            if (words.Count == 2) {
                 words.Add("#random");
-            }
-
-            if (words.Count < 3) {
-                throw new Exception("Expected more than 2 parts in the command string");
             }
 
             return Tuple.Create(words[1], words[2]);

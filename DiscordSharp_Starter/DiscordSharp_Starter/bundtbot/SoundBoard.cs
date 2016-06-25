@@ -10,8 +10,9 @@ using System.Threading;
 
 namespace DiscordSharp_Starter.BundtBot {
     class SoundBoard {
-
+        
         public bool locked = false;
+        public bool stop = false;
         SoundBoardArgs nextSound;
 
         DiscordChannel lastChannel = null;
@@ -71,8 +72,6 @@ namespace DiscordSharp_Starter.BundtBot {
             if (!File.Exists(soundFilePath)) {
                 MyLogger.WriteLine("didn't find it...", ConsoleColor.Red);
                 lastChannel.SendMessage("these are not the sounds you're looking for...");
-                client.DisconnectFromVoice();
-                locked = false;
                 return;
             }
 
@@ -108,24 +107,43 @@ namespace DiscordSharp_Starter.BundtBot {
                     nextSound.volume = 1;
                 }
                 using (var waveChannel32 = new WaveChannel32(mp3Reader, nextSound.volume, 0f) { PadWithZeroes = false }) {
-                    using (var resampler = new MediaFoundationResampler(waveChannel32, outFormat) { ResamplerQuality = 60 }) {
-                        int byteCount;
-                        while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
-                            waitTimeMS += ms;
+                    using (var effectStream = new EffectStream(waveChannel32)) {
+                        using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream)) {
+                            using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat) { ResamplerQuality = 60 }) {
 
-                            // Limit sound length
-                            if (nextSound.length_ms > 0 &&
-                                waitTimeMS > nextSound.length_ms) {
-                                break;
+                                for (int i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
+                                    if (nextSound.echo) {
+                                        if (nextSound.echoLength > 0) {
+                                            if (nextSound.echoFactor > 0) {
+                                                effectStream.Effects.Add(new Echo(nextSound.echoLength, nextSound.echoFactor));
+                                            } else {
+                                                effectStream.Effects.Add(new Echo(nextSound.echoLength));
+                                            }
+                                        } else {
+                                            effectStream.Effects.Add(new Echo());
+                                        }
+                                    }
+                                }
+
+                                int byteCount;
+                                while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                                    waitTimeMS += ms;
+
+                                    // Limit sound length
+                                    if (nextSound.length_ms > 0 &&
+                                        waitTimeMS > nextSound.length_ms) {
+                                        break;
+                                    }
+                                    if (voiceClient.Connected) {
+                                        voiceClient.SendVoice(buffer);
+                                    } else
+                                        break;
+                                }
+                                MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
+                                resampler.Dispose();
+                                mp3Reader.Close();
                             }
-                            if (voiceClient.Connected) {
-                                voiceClient.SendVoice(buffer);
-                            } else
-                                break;
                         }
-                        MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
-                        resampler.Dispose();
-                        mp3Reader.Close();
                     }
                 }
             }
@@ -134,7 +152,17 @@ namespace DiscordSharp_Starter.BundtBot {
             var totalWaitTimeMS = waitTimeMS + paddingMS;
 
             MyLogger.WriteLine("Waiting for " + totalWaitTimeMS + "ms");
-            Thread.Sleep(totalWaitTimeMS);
+
+            for (int i = 0; i < totalWaitTimeMS; i += 500) {
+                if (stop) {
+                    stop = false;
+                    locked = false;
+                    client.DisconnectFromVoice();
+                    return;
+                }
+                Thread.Sleep(500);
+            }
+            
             client.DisconnectFromVoice();
             locked = false;
         }
@@ -149,7 +177,7 @@ namespace DiscordSharp_Starter.BundtBot {
             actorDirectories = actorDirectories.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
 
             if (actorName == "#random") {
-                var num = random.Next(0, actorDirectories.Length - 1);
+                var num = random.Next(0, actorDirectories.Length);
                 actorName = actorDirectories[num];
             } else {
                 var bestScore = ToolBox.Compute(actorName, actorDirectories[0]);
@@ -173,8 +201,6 @@ namespace DiscordSharp_Starter.BundtBot {
                     Console.WriteLine("Matching score not good enough");
                     // no match
                     lastChannel.SendMessage("these are not the sounds you're looking for...");
-                    client.DisconnectFromVoice();
-                    locked = false;
                     return;
                 }
 
@@ -204,7 +230,7 @@ namespace DiscordSharp_Starter.BundtBot {
             // If Random
             if (soundName == "#random") {
                 Random rand = new Random();
-                var num = rand.Next(0, soundNames.Length - 1);
+                var num = rand.Next(0, soundNames.Length);
                 soundName = soundNames[num];
             } else {
                 var bestScore = ToolBox.Compute(soundName, soundNames[0]);
@@ -228,8 +254,6 @@ namespace DiscordSharp_Starter.BundtBot {
                     Console.WriteLine("Matching score not good enough");
                     // no match
                     lastChannel.SendMessage("these are not the sounds you're looking for...");
-                    client.DisconnectFromVoice();
-                    locked = false;
                     return;
                 }
 

@@ -64,12 +64,12 @@ namespace DiscordSharp_Starter.BundtBot {
 
             if (eventArgs.MessageText == "!stop") {
                 if (client.GetVoiceClient() == null) {
-                    eventArgs.Channel.SendMessage("stop what?");
+                    eventArgs.Channel.SendMessage("stop what? (client.GetVoiceClient() returned null)");
                 } else if (client.GetVoiceClient().Connected == false) {
-                    eventArgs.Channel.SendMessage("stop what?");
+                    eventArgs.Channel.SendMessage("stop what? (client.GetVoiceClient().Connected == false)");
                 } else {
                     eventArgs.Channel.SendMessage("okay... :disappointed_relieved:");
-                    client.DisconnectFromVoice();
+                    soundBoard.stop = true;
                 }
             }
 

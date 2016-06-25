@@ -68,7 +68,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BundtBot\Echo.cs" />
+    <Compile Include="BundtBot\EffectStream.cs" />
     <Compile Include="BundtBot\ConsoleColorHelper.cs" />
+    <Compile Include="BundtBot\IEffect.cs" />
     <Compile Include="BundtBot\MessageReceivedProcessor.cs" />
     <Compile Include="BundtBot\MyLogger.cs" />
     <Compile Include="BundtBot\SoundBoardArgs.cs" />
