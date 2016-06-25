@@ -9,7 +9,9 @@ namespace DiscordSharp_Starter.BundtBot {
         public string actorName;
         public string soundName;
         public string soundPath;
+        public float volume;
         public float length_seconds;
+
         public int length_ms {
             get { return (int)(length_seconds * 1000); }
         }
@@ -61,6 +63,17 @@ namespace DiscordSharp_Starter.BundtBot {
                         throw new ArgumentException("invalid argument value, must be a positive foat");
                     }
                     MyLogger.WriteLine("Parsed " + arg + " into " + length_seconds + " seconds");
+                } else if (arg.StartsWith("--volume:") &&
+                    arg.Length > 9) {
+                    try {
+                        volume = float.Parse(arg.Substring(9));
+                    } catch (Exception) {
+                        throw new ArgumentException("badly formed argument value");
+                    }
+                    if (volume <= 0 || volume > 1) {
+                        throw new ArgumentException("invalid argument value, must be a positive foat (0 < volume <= 1)");
+                    }
+                    MyLogger.WriteLine("Parsed " + arg + " into " + volume);
                 } else {
                     throw new ArgumentException("argument not found");
                 }

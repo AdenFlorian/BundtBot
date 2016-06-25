@@ -101,23 +101,30 @@ namespace DiscordSharp_Starter.BundtBot {
             var outFormat = new WaveFormat(sampleRate, 16, channels);
             voiceClient.SetSpeaking(true);
             using (var mp3Reader = new MediaFoundationReader(soundFilePath)) {
-                using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat) { ResamplerQuality = 60 }) {
-                    int byteCount;
-                    while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
-                        waitTimeMS += ms;
-                        // Limit sound length
-                        if (nextSound.length_ms > 0 &&
-                            waitTimeMS > nextSound.length_ms) {
-                            break;
+                // Just an extra check to keep the bot from blowing people ears out
+                if (nextSound.volume > 1) {
+                    throw new ArgumentException("Voluem should never be greater than 1!");
+                }
+                using (var waveChannel32 = new WaveChannel32(mp3Reader, nextSound.volume, 0f) { PadWithZeroes = false }) {
+                    using (var resampler = new MediaFoundationResampler(waveChannel32, outFormat) { ResamplerQuality = 60 }) {
+                        int byteCount;
+                        while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                            waitTimeMS += ms;
+
+                            // Limit sound length
+                            if (nextSound.length_ms > 0 &&
+                                waitTimeMS > nextSound.length_ms) {
+                                break;
+                            }
+                            if (voiceClient.Connected) {
+                                voiceClient.SendVoice(buffer);
+                            } else
+                                break;
                         }
-                        if (voiceClient.Connected) {
-                            voiceClient.SendVoice(buffer);
-                        } else
-                            break;
+                        MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
+                        resampler.Dispose();
+                        mp3Reader.Close();
                     }
-                    MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
-                    resampler.Dispose();
-                    mp3Reader.Close();
                 }
             }
 

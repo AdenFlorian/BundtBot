@@ -2,6 +2,8 @@
 using System;
 using System.Configuration;
 using System.Linq;
+using System.Net;
+using System.Threading;
 
 namespace DiscordSharp_Starter.BundtBot {
     class Program {
@@ -85,7 +87,13 @@ namespace DiscordSharp_Starter.BundtBot {
                 try {
                     msgRcvdProcessor.ProcessMessage(client, soundBoard, e);
                 } catch (Exception) {
-                    e.Channel.SendMessage("bundtbot is brokebot");
+                    Thread.Sleep(1000);
+                    try {
+                        e.Channel.SendMessage("bundtbot is brokebot");
+                    } catch (Exception exception) {
+                        MyLogger.WriteLine("It really broke this time:");
+                        MyLogger.WriteLine(exception.Message, ConsoleColor.Red);
+                    }
                 }
             };
             #endregion
