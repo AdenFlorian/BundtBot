@@ -106,7 +106,7 @@ namespace DiscordSharp_Starter.BundtBot {
                 } else if (nextSound.volume == 0) {
                     nextSound.volume = 1;
                 }
-                using (var waveChannel32 = new WaveChannel32(mp3Reader, nextSound.volume, 0f) { PadWithZeroes = false }) {
+                using (var waveChannel32 = new WaveChannel32(mp3Reader, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false }) {
                     using (var effectStream = new EffectStream(waveChannel32)) {
                         using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream)) {
                             using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat) { ResamplerQuality = 60 }) {
@@ -122,6 +122,8 @@ namespace DiscordSharp_Starter.BundtBot {
                                         } else {
                                             effectStream.Effects.Add(new Echo());
                                         }
+                                    } else if (nextSound.reverb) {
+                                        effectStream.Effects.Add(new Reverb());
                                     }
                                 }
 

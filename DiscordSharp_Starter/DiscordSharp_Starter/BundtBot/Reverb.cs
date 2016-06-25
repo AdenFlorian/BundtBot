@@ -5,27 +5,27 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordSharp_Starter.BundtBot {
-    public class Echo : IEffect {
+    public class Reverb : IEffect {
 
         public int EchoLength { get; private set; }
         public float EchoFactor { get; private set; }
 
-        Queue<float> samples;
+        Queue<float> queue1;
 
-        public Echo(int length = 5000, float factor = 0.5f) {
+        public Reverb(int length = 3333, float factor = 0.5f) {
             this.EchoLength = length;
             this.EchoFactor = factor;
-            this.samples = new Queue<float>();
+            this.queue1 = new Queue<float>();
 
             for (int i = 0; i < length; i++) {
-                samples.Enqueue(0f);
+                queue1.Enqueue(0f);
             }
         }
 
         public float ApplyEffect(float sample) {
-            sample *= 0.5f;
-            samples.Enqueue(sample);
-            return Math.Min(1, Math.Max(-1, sample + EchoFactor * samples.Dequeue()));
+            var x = Math.Min(1, Math.Max(-1, sample + EchoFactor * queue1.Dequeue()));
+            queue1.Enqueue(x);
+            return x;
         }
     }
 }

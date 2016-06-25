@@ -13,6 +13,7 @@ namespace DiscordSharp_Starter.BundtBot {
         #endregion
 
         #region Optional
+        public bool reverb = false;
         public bool echo = false;
         public int echoLength = 0;
         public float echoFactor = 0;
@@ -102,6 +103,9 @@ namespace DiscordSharp_Starter.BundtBot {
                             }
                         }
                     }
+                } else if (arg.StartsWith("--reverb")) {
+                    reverb = true;
+                    MyLogger.WriteLine("Parsed " + arg);
                 } else {
                     throw new ArgumentException("argument not found");
                 }

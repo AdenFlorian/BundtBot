@@ -68,6 +68,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BundtBot\Reverb.cs" />
     <Compile Include="BundtBot\Echo.cs" />
     <Compile Include="BundtBot\EffectStream.cs" />
     <Compile Include="BundtBot\ConsoleColorHelper.cs" />
