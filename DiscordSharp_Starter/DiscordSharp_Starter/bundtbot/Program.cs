@@ -38,13 +38,25 @@ namespace DiscordSharp_Starter.BundtBot {
             }
 
             // Now to make sure the console doesnt close:
-            Console.ReadKey(); // If the user presses a key, the bot will shut down.
+            //Console.ReadKey(); // If the user presses a key, the bot will shut down.
+            //Console.TreatControlCAsInput = true;
+            while (true) {
+                Thread.Sleep(100);
+            }
             MyLogger.WriteLine("\nBuh Bye!");
             Environment.Exit(0); // Make sure all threads are closed.
         }
 
         private static void RegisterEventHandlers(DiscordClient client) {
             MyLogger.Write("Registering Event Handlers...");
+
+            client.TextClientDebugMessageReceived += (sender, e) => {
+                MyLogger.WriteLine("***TextClientDebugLog*** " + e.message.Message);
+            };
+
+            client.VoiceClientDebugMessageReceived += (sender, e) => {
+                MyLogger.WriteLine("+++VoiceClientDebugLog+++ " + e.message.Message);
+            };
 
             #region ConnectedEvents
             client.Connected += (sender, e) => {
@@ -61,7 +73,18 @@ namespace DiscordSharp_Starter.BundtBot {
                     return;
                 }
 
-                soundBoard.OnConnectedToVoiceChannel(voiceClient);
+                var defaultTextChannel = voiceClient.Channel.Parent
+                    .Channels.First();
+
+                try {
+                    soundBoard.OnConnectedToVoiceChannel(voiceClient);
+                } catch (Exception ex) {
+                    MyLogger.WriteLine(ex.Message, ConsoleColor.Red);
+                    MyLogger.WriteLine(ex.StackTrace, ConsoleColor.Yellow);
+                    soundBoard.locked = false;
+                    defaultTextChannel.SendMessage("bundtbot is brokebot");
+                    client.DisconnectFromVoice();
+                }
             };
             #endregion
 
@@ -86,13 +109,17 @@ namespace DiscordSharp_Starter.BundtBot {
             client.MessageReceived += (sender, e) => {
                 try {
                     msgRcvdProcessor.ProcessMessage(client, soundBoard, e);
-                } catch (Exception) {
+                } catch (Exception ex1) {
+                    MyLogger.WriteLine("Caught Exception from msgRcvdProcessor.ProcessMessage(client, soundBoard, e)", ConsoleColor.Red);
+                    MyLogger.WriteLine(ex1.Message, ConsoleColor.Red);
+                    MyLogger.WriteLine(ex1.StackTrace, ConsoleColor.Yellow);
+                    MyLogger.WriteLine("Going to wait a second then try to send a message to a text channel saying that we broke");
                     Thread.Sleep(1000);
                     try {
                         e.Channel.SendMessage("bundtbot is brokebot");
-                    } catch (Exception exception) {
+                    } catch (Exception ex2) {
                         MyLogger.WriteLine("It really broke this time:");
-                        MyLogger.WriteLine(exception.Message, ConsoleColor.Red);
+                        MyLogger.WriteLine(ex2.Message, ConsoleColor.Red);
                     }
                 }
             };

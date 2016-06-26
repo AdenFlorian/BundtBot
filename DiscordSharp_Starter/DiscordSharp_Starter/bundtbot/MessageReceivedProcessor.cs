@@ -3,8 +3,12 @@ using DiscordSharp.Events;
 using DiscordSharp.Objects;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Web;
+using WrapYoutubeDl;
 
 namespace DiscordSharp_Starter.BundtBot {
     class MessageReceivedProcessor {
@@ -90,6 +94,93 @@ namespace DiscordSharp_Starter.BundtBot {
 
                 soundBoard.Process(eventArgs, soundBoardArgs);
             }
+
+            if (eventArgs.MessageText.StartsWith("!youtube ") ||
+                eventArgs.MessageText.StartsWith("!yt ")) {
+
+                var ytSearchString = "";
+
+                var commandString = eventArgs.MessageText.Trim();
+
+                if (commandString.StartsWith("!youtube ") &&
+                    commandString.Length > 9) {
+                    ytSearchString = commandString.Substring(9);
+                } else if (commandString.StartsWith("!yt ") &&
+                    commandString.Length > 4) {
+                    ytSearchString = commandString.Substring(4);
+                } else {
+                    eventArgs.Channel.SendMessage("you're doing it wrong (or something broke)");
+                    return;
+                }
+
+                var urlToDownload = "\"ytsearch1:"
+                    + ytSearchString
+                    + "\"";
+                var newFilename = Guid.NewGuid().ToString();
+                var mp3OutputFolder = "c:/@mp3/";
+
+                var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);
+                downloader.ProgressDownload += downloader_ProgressDownload;
+                downloader.FinishedDownload += downloader_FinishedDownload;
+                downloader.ErrorDownload += downloader_ErrorDownload;
+                downloader.StartedDownload += downloader_StartedDownload;
+                var outputPath = downloader.Download();
+                Console.WriteLine("downloader.Download() Finished! " + outputPath);
+
+                // Convert to WAV
+                var outputWAV = outputPath.Substring(0, outputPath.LastIndexOf('.')) + ".wav";
+
+                var ffmpegProcess = new Process();
+
+                var startinfo = new ProcessStartInfo {
+                    FileName = @"C:\Users\Bundt\Source\Repos\DiscordSharp_Starter\DiscordSharp_Starter\DiscordSharp_Starter\bin\Debug\ffmpeg.exe",
+                    Arguments = "-i \"" + outputPath + "\" \"" + outputWAV + "\"",
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+
+                ffmpegProcess.StartInfo = startinfo;
+
+                ffmpegProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) => {
+                    MyLogger.WriteLine("%%FFMPEG%% " + e.Data);
+                };
+
+                ffmpegProcess.Start();
+                ffmpegProcess.BeginOutputReadLine();
+                ffmpegProcess.WaitForExit();
+
+                File.Delete(outputPath);
+
+                var args = new SoundBoardArgs();
+                args.soundPath = outputWAV;
+
+                if (File.Exists(args.soundPath) == false) {
+                    eventArgs.Channel.SendMessage("that video doesn't work, sorry, try seomthing else");
+                    return;
+                }
+
+                if (soundBoard.locked) {
+                    eventArgs.Channel.SendMessage("wait your turn...");
+                    return;
+                }
+
+
+                if (eventArgs.Author.CurrentVoiceChannel == null) {
+                    eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                    return;
+                }
+
+                soundBoard.nextSound = args;
+
+                DiscordVoiceConfig voiceConfig = null;
+                bool clientMuted = false;
+                bool clientDeaf = false;
+                client.ConnectToVoiceChannel(eventArgs.Author.CurrentVoiceChannel, voiceConfig, clientMuted, clientDeaf);
+                soundBoard.locked = true;
+            }
             #endregion
         }
 
@@ -106,6 +197,22 @@ namespace DiscordSharp_Starter.BundtBot {
                 eventArgs.Channel.SendMessage("there are no dogs here, who let them out (random.dog is down :dog: :interrobang:)");
             }
 
+        }
+
+        static void downloader_FinishedDownload(object sender, DownloadEventArgs e) {
+            Console.WriteLine("Finished Download!");
+        }
+
+        static void downloader_ProgressDownload(object sender, ProgressEventArgs e) {
+            Console.WriteLine(e.Percentage);
+        }
+
+        static void downloader_ErrorDownload(object sender, ProgressEventArgs e) {
+            Console.WriteLine("error");
+        }
+
+        static void downloader_StartedDownload(object sender, DownloadEventArgs e) {
+            Console.WriteLine("yotube-dl process started");
         }
     }
 }

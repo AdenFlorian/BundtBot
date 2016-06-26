@@ -2,6 +2,8 @@
 using DiscordSharp.Events;
 using DiscordSharp.Objects;
 using NAudio.Wave;
+using NVorbis;
+using NVorbis.NAudioSupport;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +15,7 @@ namespace DiscordSharp_Starter.BundtBot {
         
         public bool locked = false;
         public bool stop = false;
-        SoundBoardArgs nextSound;
+        public SoundBoardArgs nextSound;
 
         DiscordChannel lastChannel = null;
         DiscordClient client;
@@ -99,14 +101,29 @@ namespace DiscordSharp_Starter.BundtBot {
             byte[] buffer = new byte[blockSize];
             var outFormat = new WaveFormat(sampleRate, 16, channels);
             voiceClient.SetSpeaking(true);
-            using (var mp3Reader = new MediaFoundationReader(soundFilePath)) {
+            
+
+            /*WaveStream audioFileStream = null;
+
+            switch (soundFilePath.Reverse().Take(4).Reverse().ToString()) {
+                case ".ogg":
+                    audioFileStream = new VorbisWaveReader(soundFilePath);
+                    break;
+                case ".mp3":
+                    audioFileStream = new AudioFileReader(soundFilePath);
+                    break;
+                default:
+                    throw new FormatException();
+            }*/
+
+            using (var audioFileStream = new MediaFoundationReader(soundFilePath)) {
                 // Just an extra check to keep the bot from blowing people ears out
                 if (nextSound.volume > 1.1f) {
                     throw new ArgumentException("Voluem should never be greater than 1!");
                 } else if (nextSound.volume == 0) {
                     nextSound.volume = 1;
                 }
-                using (var waveChannel32 = new WaveChannel32(mp3Reader, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false }) {
+                using (var waveChannel32 = new WaveChannel32(audioFileStream, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false }) {
                     using (var effectStream = new EffectStream(waveChannel32)) {
                         using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream)) {
                             using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat) { ResamplerQuality = 60 }) {
@@ -143,7 +160,7 @@ namespace DiscordSharp_Starter.BundtBot {
                                 }
                                 MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
                                 resampler.Dispose();
-                                mp3Reader.Close();
+                                audioFileStream.Close();
                             }
                         }
                     }
@@ -158,8 +175,9 @@ namespace DiscordSharp_Starter.BundtBot {
             for (int i = 0; i < totalWaitTimeMS; i += 500) {
                 if (stop) {
                     stop = false;
-                    locked = false;
                     client.DisconnectFromVoice();
+                    locked = false;
+                    File.Delete(soundFilePath);
                     return;
                 }
                 Thread.Sleep(500);
@@ -167,6 +185,7 @@ namespace DiscordSharp_Starter.BundtBot {
             
             client.DisconnectFromVoice();
             locked = false;
+            File.Delete(soundFilePath);
         }
 
         void CheckActorName(ref string actorName) {
