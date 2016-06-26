@@ -165,6 +165,11 @@ namespace DiscordSharp_Starter.BundtBot {
             };
             client.UserJoinedVoiceChannel += (sender, e) => {
                 if (e.User.IsBot) {
+                    MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
+                    return;
+                }
+                if (e.Channel.IsAFKChannel) {
+                    MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
                     return;
                 }
                 MyLogger.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
@@ -174,10 +179,12 @@ namespace DiscordSharp_Starter.BundtBot {
                     Tuple.Create("genji", "hello"),
                     Tuple.Create("mercy", "hello"),
                     Tuple.Create("torbjorn", "hello"),
-                    Tuple.Create("winston", "hi there")
+                    Tuple.Create("winston", "hi there"),
+                    Tuple.Create("suhdude", "#random")
                 };
                 var i = random.Next(list.Count());
                 var x = list[i];
+                MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
                 soundBoard.Process(null, e.Channel, x.Item1, x.Item2);
             };
             client.UserLeftVoiceChannel += (sender, e) => {

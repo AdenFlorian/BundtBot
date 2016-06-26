@@ -13,6 +13,7 @@ namespace DiscordSharp_Starter.BundtBot {
         #endregion
 
         #region Optional
+        public bool deleteAfterPlay = false;
         public bool reverb = false;
         public bool echo = false;
         public int echoLength = 0;

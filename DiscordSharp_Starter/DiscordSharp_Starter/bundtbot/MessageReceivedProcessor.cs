@@ -113,52 +113,37 @@ namespace DiscordSharp_Starter.BundtBot {
                     return;
                 }
 
-                var urlToDownload = "\"ytsearch1:"
-                    + ytSearchString
-                    + "\"";
-                var newFilename = Guid.NewGuid().ToString();
+                if (eventArgs.Author.CurrentVoiceChannel == null) {
+                    eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                    return;
+                }
+
+                // Get video id
+                MyLogger.WriteLine("Getting youtube video id...");
+                var youtubeVideoID = youtube_dl.GetVideoID(ytSearchString);
+                MyLogger.WriteLine("Youtube video ID get! " + youtubeVideoID, ConsoleColor.Green);
+
                 var mp3OutputFolder = "c:/@mp3/";
 
-                var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);
-                downloader.ProgressDownload += downloader_ProgressDownload;
-                downloader.FinishedDownload += downloader_FinishedDownload;
-                downloader.ErrorDownload += downloader_ErrorDownload;
-                downloader.StartedDownload += downloader_StartedDownload;
-                var outputPath = downloader.Download();
-                Console.WriteLine("downloader.Download() Finished! " + outputPath);
+                // See if file exists
+                var possiblePath = mp3OutputFolder + youtubeVideoID + ".wav";
 
-                // Convert to WAV
-                var outputWAV = outputPath.Substring(0, outputPath.LastIndexOf('.')) + ".wav";
+                string outputWAV;
 
-                var ffmpegProcess = new Process();
-
-                var startinfo = new ProcessStartInfo {
-                    FileName = @"C:\Users\Bundt\Source\Repos\DiscordSharp_Starter\DiscordSharp_Starter\DiscordSharp_Starter\bin\Debug\ffmpeg.exe",
-                    Arguments = "-i \"" + outputPath + "\" \"" + outputWAV + "\"",
-                    UseShellExecute = false,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                };
-
-                ffmpegProcess.StartInfo = startinfo;
-
-                ffmpegProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) => {
-                    MyLogger.WriteLine("%%FFMPEG%% " + e.Data);
-                };
-
-                ffmpegProcess.Start();
-                ffmpegProcess.BeginOutputReadLine();
-                ffmpegProcess.WaitForExit();
-
-                File.Delete(outputPath);
+                if (File.Exists(possiblePath) == false) {
+                    outputWAV = YoutubeDownloadAndConvert(eventArgs, ytSearchString, mp3OutputFolder);
+                } else {
+                    MyLogger.WriteLine("WAV file exists already! " + possiblePath, ConsoleColor.Green);
+                    outputWAV = possiblePath;
+                    eventArgs.Channel.SendMessage("Wait for it...");
+                }
 
                 var args = new SoundBoardArgs();
                 args.soundPath = outputWAV;
+                args.deleteAfterPlay = false;
 
                 if (File.Exists(args.soundPath) == false) {
-                    eventArgs.Channel.SendMessage("that video doesn't work, sorry, try seomthing else");
+                    eventArgs.Channel.SendMessage("that video doesn't work, sorry, try something else");
                     return;
                 }
 
@@ -166,12 +151,7 @@ namespace DiscordSharp_Starter.BundtBot {
                     eventArgs.Channel.SendMessage("wait your turn...");
                     return;
                 }
-
-
-                if (eventArgs.Author.CurrentVoiceChannel == null) {
-                    eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
-                    return;
-                }
+                soundBoard.locked = true;
 
                 soundBoard.nextSound = args;
 
@@ -179,9 +159,57 @@ namespace DiscordSharp_Starter.BundtBot {
                 bool clientMuted = false;
                 bool clientDeaf = false;
                 client.ConnectToVoiceChannel(eventArgs.Author.CurrentVoiceChannel, voiceConfig, clientMuted, clientDeaf);
-                soundBoard.locked = true;
             }
             #endregion
+        }
+
+        private static string YoutubeDownloadAndConvert(DiscordMessageEventArgs eventArgs, string ytSearchString, string mp3OutputFolder) {
+            var urlToDownload = "\"ytsearch1:"
+                                + ytSearchString
+                                + "\"";
+            var newFilename = Guid.NewGuid().ToString();
+
+            var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);
+            downloader.ProgressDownload += downloader_ProgressDownload;
+            downloader.FinishedDownload += downloader_FinishedDownload;
+            downloader.ErrorDownload += downloader_ErrorDownload;
+            downloader.StartedDownload += downloader_StartedDownload;
+
+            eventArgs.Channel.SendMessage("Searching youtube for: " + ytSearchString);
+
+            var outputPath = downloader.Download();
+            Console.WriteLine("downloader.Download() Finished! " + outputPath);
+
+            eventArgs.Channel.SendMessage("Download finished! Converting then streaming...");
+
+            // Convert to WAV
+            var outputWAV = outputPath.Substring(0, outputPath.LastIndexOf('.')) + ".wav";
+
+            var ffmpegProcess = new Process();
+
+            var startinfo = new ProcessStartInfo {
+                FileName = @"C:\Users\Bundt\Source\Repos\DiscordSharp_Starter\DiscordSharp_Starter\DiscordSharp_Starter\bin\Debug\ffmpeg.exe",
+                Arguments = "-i \"" + outputPath + "\" \"" + outputWAV + "\"",
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            ffmpegProcess.StartInfo = startinfo;
+
+            ffmpegProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) => {
+                MyLogger.WriteLine("%%FFMPEG%% " + e.Data);
+            };
+
+            ffmpegProcess.Start();
+            ffmpegProcess.BeginOutputReadLine();
+            ffmpegProcess.WaitForExit();
+            
+            File.Delete(outputPath);
+
+            return outputWAV;
         }
 
         private static void Dog(DiscordSharp.Events.DiscordMessageEventArgs eventArgs, string message) {

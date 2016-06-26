@@ -153,10 +153,11 @@ namespace DiscordSharp_Starter.BundtBot {
                                         waitTimeMS > nextSound.length_ms) {
                                         break;
                                     }
-                                    if (voiceClient.Connected) {
+                                    if (voiceClient.Connected && stop == false) {
                                         voiceClient.SendVoice(buffer);
-                                    } else
+                                    } else {
                                         break;
+                                    }
                                 }
                                 MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
                                 resampler.Dispose();
@@ -175,17 +176,17 @@ namespace DiscordSharp_Starter.BundtBot {
             for (int i = 0; i < totalWaitTimeMS; i += 500) {
                 if (stop) {
                     stop = false;
-                    client.DisconnectFromVoice();
-                    locked = false;
-                    File.Delete(soundFilePath);
-                    return;
+                    break;
                 }
                 Thread.Sleep(500);
             }
             
             client.DisconnectFromVoice();
             locked = false;
-            File.Delete(soundFilePath);
+            if (nextSound.deleteAfterPlay) {
+                MyLogger.WriteLine("Deleting sound file: " + nextSound.soundPath, ConsoleColor.Yellow);
+                File.Delete(soundFilePath);
+            }
         }
 
         void CheckActorName(ref string actorName) {
@@ -215,7 +216,7 @@ namespace DiscordSharp_Starter.BundtBot {
                     }
                 }
 
-                var highestScoreAllowed = 5;
+                var highestScoreAllowed = 4;
 
                 if (bestScore > highestScoreAllowed) {
                     // Score not good enough
@@ -268,7 +269,7 @@ namespace DiscordSharp_Starter.BundtBot {
                     }
                 }
 
-                var highestScoreAllowed = 5;
+                var highestScoreAllowed = 4;
 
                 if (bestScore > highestScoreAllowed) {
                     // Score not good enough
