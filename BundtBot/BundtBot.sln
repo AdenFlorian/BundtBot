@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BundtBot", "DiscordSharp_Starter\BundtBot.csproj", "{CFBAE8A8-52B3-4AF0-8B73-CBDC243DBCD7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BundtBot", "BundtBot\BundtBot.csproj", "{CFBAE8A8-52B3-4AF0-8B73-CBDC243DBCD7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordSharp", "..\..\DiscordSharp\DiscordSharp\DiscordSharp.csproj", "{A96FFE9E-3650-4976-872E-5BB336CC1589}"
 EndProject

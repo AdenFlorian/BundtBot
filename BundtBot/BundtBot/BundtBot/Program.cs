@@ -51,11 +51,11 @@ namespace DiscordSharp_Starter.BundtBot {
             MyLogger.Write("Registering Event Handlers...");
 
             client.TextClientDebugMessageReceived += (sender, e) => {
-                MyLogger.WriteLine("***TextClientDebugLog*** " + e.message.Message);
+                //MyLogger.WriteLine("***TextClientDebugLog*** " + e.message.Message);
             };
 
             client.VoiceClientDebugMessageReceived += (sender, e) => {
-                MyLogger.WriteLine("+++VoiceClientDebugLog+++ " + e.message.Message);
+                //MyLogger.WriteLine("+++VoiceClientDebugLog+++ " + e.message.Message);
             };
 
             #region ConnectedEvents
