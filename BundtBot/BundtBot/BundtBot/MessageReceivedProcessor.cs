@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Web;
+using WebSocketSharp;
 using WrapYoutubeDl;
 
 namespace DiscordSharp_Starter.BundtBot {
@@ -178,6 +179,11 @@ namespace DiscordSharp_Starter.BundtBot {
             eventArgs.Channel.SendMessage("Searching youtube for: " + ytSearchString);
 
             var outputPath = downloader.Download();
+            if (outputPath.IsNullOrEmpty()) {
+                Console.WriteLine("output path is null :( possibly to big filesize", ConsoleColor.Yellow);
+                eventArgs.Channel.SendMessage("ummm...bad news...something broke...the video was probably too big to download, so try somethin else, k?");
+                throw new Exception();
+            }
             Console.WriteLine("downloader.Download() Finished! " + outputPath);
 
             eventArgs.Channel.SendMessage("Download finished! Converting then streaming...");
