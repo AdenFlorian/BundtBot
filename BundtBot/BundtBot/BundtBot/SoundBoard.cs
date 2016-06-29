@@ -1,4 +1,5 @@
-﻿using DiscordSharp;
+﻿using BundtBot.BundtBot;
+using DiscordSharp;
 using DiscordSharp.Events;
 using DiscordSharp.Objects;
 using NAudio.Wave;
@@ -6,11 +7,12 @@ using NVorbis;
 using NVorbis.NAudioSupport;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     class SoundBoard {
         
         public bool locked = false;
@@ -88,6 +90,7 @@ namespace DiscordSharp_Starter.BundtBot {
             locked = true;
         }
 
+        [SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         public void OnConnectedToVoiceChannel(DiscordVoiceClient voiceClient) {
 
             string soundFilePath = nextSound.soundPath;
@@ -102,70 +105,35 @@ namespace DiscordSharp_Starter.BundtBot {
             var outFormat = new WaveFormat(sampleRate, 16, channels);
             voiceClient.SetSpeaking(true);
             
+            // Just an extra check to keep the bot from blowing people's ears out
+            if (nextSound.volume > 1.1f) {
+                throw new ArgumentException("Voluem should never be greater than 1!");
+            } else if (nextSound.volume == 0) {
+                nextSound.volume = 1;
+            }
 
-            /*WaveStream audioFileStream = null;
+            using (var audioFileStream = new MediaFoundationReader(soundFilePath)) 
+            using (var waveChannel32 = new WaveChannel32(audioFileStream, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false }) 
+            using (var effectStream = new EffectStream(waveChannel32)) 
+            using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream)) 
+            using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat) { ResamplerQuality = 60 }) {
+                ApplyEffects(waveChannel32, effectStream);
+                
+                while ((resampler.Read(buffer, 0, blockSize)) > 0) {
+                    waitTimeMS += ms;
 
-            switch (soundFilePath.Reverse().Take(4).Reverse().ToString()) {
-                case ".ogg":
-                    audioFileStream = new VorbisWaveReader(soundFilePath);
-                    break;
-                case ".mp3":
-                    audioFileStream = new AudioFileReader(soundFilePath);
-                    break;
-                default:
-                    throw new FormatException();
-            }*/
-
-            using (var audioFileStream = new MediaFoundationReader(soundFilePath)) {
-                // Just an extra check to keep the bot from blowing people ears out
-                if (nextSound.volume > 1.1f) {
-                    throw new ArgumentException("Voluem should never be greater than 1!");
-                } else if (nextSound.volume == 0) {
-                    nextSound.volume = 1;
-                }
-                using (var waveChannel32 = new WaveChannel32(audioFileStream, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false }) {
-                    using (var effectStream = new EffectStream(waveChannel32)) {
-                        using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream)) {
-                            using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat) { ResamplerQuality = 60 }) {
-
-                                for (int i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
-                                    if (nextSound.echo) {
-                                        if (nextSound.echoLength > 0) {
-                                            if (nextSound.echoFactor > 0) {
-                                                effectStream.Effects.Add(new Echo(nextSound.echoLength, nextSound.echoFactor));
-                                            } else {
-                                                effectStream.Effects.Add(new Echo(nextSound.echoLength));
-                                            }
-                                        } else {
-                                            effectStream.Effects.Add(new Echo());
-                                        }
-                                    } else if (nextSound.reverb) {
-                                        effectStream.Effects.Add(new Reverb());
-                                    }
-                                }
-
-                                int byteCount;
-                                while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
-                                    waitTimeMS += ms;
-
-                                    // Limit sound length
-                                    if (nextSound.length_ms > 0 &&
-                                        waitTimeMS > nextSound.length_ms) {
-                                        break;
-                                    }
-                                    if (voiceClient.Connected && stop == false) {
-                                        voiceClient.SendVoice(buffer);
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
-                                resampler.Dispose();
-                                audioFileStream.Close();
-                            }
-                        }
+                    // Limit sound length (--length)
+                    if (nextSound.length_ms > 0 && waitTimeMS > nextSound.length_ms) {
+                        break;
                     }
+
+                    if (voiceClient.Connected == false || stop == true) {
+                        break;
+                    }
+
+                    voiceClient.SendVoice(buffer);
                 }
+                MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
             }
 
             int paddingMS = 1000;
@@ -189,6 +157,24 @@ namespace DiscordSharp_Starter.BundtBot {
             }
         }
 
+        private void ApplyEffects(WaveChannel32 waveChannel32, EffectStream effectStream) {
+            for (int i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
+                if (nextSound.echo) {
+                    if (nextSound.echoLength > 0) {
+                        if (nextSound.echoFactor > 0) {
+                            effectStream.Effects.Add(new Echo(nextSound.echoLength, nextSound.echoFactor));
+                        } else {
+                            effectStream.Effects.Add(new Echo(nextSound.echoLength));
+                        }
+                    } else {
+                        effectStream.Effects.Add(new Echo());
+                    }
+                } else if (nextSound.reverb) {
+                    effectStream.Effects.Add(new Reverb());
+                }
+            }
+        }
+
         void CheckActorName(ref string actorName) {
             var actorDirectories = Directory.GetDirectories(basePath);
 
@@ -202,11 +188,11 @@ namespace DiscordSharp_Starter.BundtBot {
                 var num = random.Next(0, actorDirectories.Length);
                 actorName = actorDirectories[num];
             } else {
-                var bestScore = ToolBox.Compute(actorName, actorDirectories[0]);
+                var bestScore = ToolBox.Levenshtein(actorName, actorDirectories[0]);
                 var matchedCategory = "";
 
                 foreach (string str in actorDirectories) {
-                    var score = ToolBox.Compute(actorName, str);
+                    var score = ToolBox.Levenshtein(actorName, str);
                     if (score < bestScore) {
                         bestScore = score;
                         matchedCategory = str;
@@ -255,11 +241,11 @@ namespace DiscordSharp_Starter.BundtBot {
                 var num = rand.Next(0, soundNames.Length);
                 soundName = soundNames[num];
             } else {
-                var bestScore = ToolBox.Compute(soundName, soundNames[0]);
+                var bestScore = ToolBox.Levenshtein(soundName, soundNames[0]);
                 var matchedSound = "";
 
                 foreach (string str in soundNames) {
-                    var score = ToolBox.Compute(soundName, str);
+                    var score = ToolBox.Levenshtein(soundName, str);
                     if (score < bestScore) {
                         bestScore = score;
                         matchedSound = str;

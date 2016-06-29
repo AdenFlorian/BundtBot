@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     public class Echo : IEffect {
 
         public int EchoLength { get; private set; }

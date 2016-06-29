@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     public static class ToolBox {
         /// <summary>
         /// Compute the distance between two strings.
         /// http://www.dotnetperls.com/levenshtein
         /// </summary>
-        public static int Compute(string s, string t) {
+        public static int Levenshtein(string s, string t) {
             int n = s.Length;
             int m = t.Length;
             int[,] d = new int[n + 1, m + 1];

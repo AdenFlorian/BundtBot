@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NAudio.Wave;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     public class EffectStream : WaveStream {
         public WaveStream SourceStream { get; set; }
 

@@ -1,29 +1,38 @@
 ﻿using DiscordSharp;
 using System;
-using System.Configuration;
+using System.IO;
 using System.Linq;
-using System.Net;
+using System.Text;
 using System.Threading;
+using WebSocketSharp;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     class Program {
         static MessageReceivedProcessor msgRcvdProcessor = new MessageReceivedProcessor();
         static SoundBoard soundBoard;
         static Random random = new Random();
 
+        const string BOT_TOKEN_PATH = "keys/BotToken.txt";
+
         static void Main(string[] args) {
-            var botToken = ConfigurationManager.AppSettings["botToken"];
+            // Allows stuff like ʘ ͜ʖ ʘ to show in the Console
+            Console.OutputEncoding = Encoding.UTF8;
+
+            // Load Bot Token
+            string botToken = null;
+
+            try {
+                botToken = LoadBotToken();
+            } catch (Exception ex) {
+                MyLogger.WriteException(ex);
+                MyLogger.WriteExitMessageAndReadKey();
+                return;
+            }
+
             DiscordClient client = new DiscordClient(botToken, true, true);
             soundBoard = new SoundBoard(client);
 
-            var bundtbotASCIIART = "";
-            bundtbotASCIIART += @" ______                  _       ______             " + "\n";
-            bundtbotASCIIART += @"(____  \                | |  _  (____  \        _   " + "\n";
-            bundtbotASCIIART += @" ____)  )_   _ ____   __| |_| |_ ____)  ) ___ _| |_ " + "\n";
-            bundtbotASCIIART += @"|  __  (| | | |  _ \ / _  (_   _)  __  ( / _ (_   _)" + "\n";
-            bundtbotASCIIART += @"| |__)  ) |_| | | | ( (_| | | |_| |__)  ) |_| || |_ " + "\n";
-            bundtbotASCIIART += @"|______/|____/|_| |_|\____|  \__)______/ \___/  \__)";
-            MyLogger.WriteLine(bundtbotASCIIART, ConsoleColor.Red);
+            WriteBundtBotASCIIArtToConsole();
 
             RegisterEventHandlers(client);
 
@@ -31,20 +40,35 @@ namespace DiscordSharp_Starter.BundtBot {
             try {
                 MyLogger.WriteLine("Calling client.Connect()");
                 client.Connect();
-            } catch (Exception e) {
-                MyLogger.WriteLine("Something went wrong!", ConsoleColor.Yellow);
-                MyLogger.WriteLine(e.Message, ConsoleColor.Red);
-                MyLogger.WriteLine("Press any key to close this window.");
+            } catch (Exception ex) {
+                MyLogger.WriteException(ex);
+                MyLogger.WriteExitMessageAndReadKey();
             }
 
             // Now to make sure the console doesnt close:
             //Console.ReadKey(); // If the user presses a key, the bot will shut down.
             //Console.TreatControlCAsInput = true;
+
+            // I did this because Console.ReadKey() was giving me trouble when starting a Process
             while (true) {
                 Thread.Sleep(100);
             }
-            MyLogger.WriteLine("\nBuh Bye!");
-            Environment.Exit(0); // Make sure all threads are closed.
+            //MyLogger.WriteLine("\nBuh Bye!");
+            //Environment.Exit(0); // Make sure all threads are closed.
+        }
+
+        private static void WriteBundtBotASCIIArtToConsole() {
+            MyLogger.NewLine();
+            MyLogger.WriteLineMultiColored(Constants.BUNDTBOT_ASCII_ART);
+            MyLogger.NewLine();
+        }
+
+        private static string LoadBotToken() {
+            string token = File.ReadLines(BOT_TOKEN_PATH).First();
+            if (token.IsNullOrEmpty()) {
+                throw new Exception("Bot token was empty or null after reading it from " + BOT_TOKEN_PATH);
+            }
+            return token;
         }
 
         private static void RegisterEventHandlers(DiscordClient client) {
@@ -60,7 +84,7 @@ namespace DiscordSharp_Starter.BundtBot {
 
             #region ConnectedEvents
             client.Connected += (sender, e) => {
-                MyLogger.WriteLine("Connected!", ConsoleColor.Green);
+                MyLogger.WriteLine("Connected! ໒( ͡ᵔ ▾ ͡ᵔ )७", ConsoleColor.Green);
                 MyLogger.WriteLine("Calling client.DisconnectFromVoice()");
                 client.DisconnectFromVoice();
                 MyLogger.WriteLine("Calling client.UpdateCurrentGame()");

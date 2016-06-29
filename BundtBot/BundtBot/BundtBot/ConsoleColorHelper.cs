@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Linq;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     public static class ConsoleColorHelper {
-
-        static bool initialized = false;
 
         static int roundRobinIndex = 0;
         static Random random = new Random();
@@ -23,11 +21,6 @@ namespace DiscordSharp_Starter.BundtBot {
         }
 
         public static ConsoleColor GetRoundRobinColor() {
-            if (initialized == false) {
-                roundRobinIndex = random.Next(colors.Count());
-                initialized = true;
-            }
-
             if (roundRobinIndex == (colors.Length - 1)) {
                 roundRobinIndex = 0;
             } else {
@@ -35,6 +28,14 @@ namespace DiscordSharp_Starter.BundtBot {
             }
             
             return colors[roundRobinIndex];
+        }
+
+        public static void ResetRoundRobinToStart() {
+            roundRobinIndex = 0;
+        }
+
+        public static void ResetRoundRobinRandomly() {
+            roundRobinIndex = random.Next(colors.Count());
         }
     }
 }

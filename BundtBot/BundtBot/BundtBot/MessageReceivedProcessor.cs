@@ -1,4 +1,5 @@
-﻿using DiscordSharp;
+﻿using BundtBot.BundtBot;
+using DiscordSharp;
 using DiscordSharp.Events;
 using DiscordSharp.Objects;
 using System;
@@ -11,7 +12,7 @@ using System.Web;
 using WebSocketSharp;
 using WrapYoutubeDl;
 
-namespace DiscordSharp_Starter.BundtBot {
+namespace BundtBot.BundtBot {
     class MessageReceivedProcessor {
 
         public void ProcessMessage(DiscordClient client, SoundBoard soundBoard, DiscordMessageEventArgs eventArgs) {
@@ -164,7 +165,7 @@ namespace DiscordSharp_Starter.BundtBot {
             #endregion
         }
 
-        private static string YoutubeDownloadAndConvert(DiscordMessageEventArgs eventArgs, string ytSearchString, string mp3OutputFolder) {
+        private string YoutubeDownloadAndConvert(DiscordMessageEventArgs eventArgs, string ytSearchString, string mp3OutputFolder) {
             var urlToDownload = "\"ytsearch1:"
                                 + ytSearchString
                                 + "\"";
@@ -194,7 +195,7 @@ namespace DiscordSharp_Starter.BundtBot {
             var ffmpegProcess = new Process();
 
             var startinfo = new ProcessStartInfo {
-                FileName = @"C:\Users\Bundt\Source\Repos\DiscordSharp_Starter\DiscordSharp_Starter\DiscordSharp_Starter\bin\Debug\ffmpeg.exe",
+                FileName = @"C:\Users\Bundt\Source\Repos\BundtBot\BundtBot\BundtBot\bin\Debug\ffmpeg.exe",
                 Arguments = "-i \"" + outputPath + "\" \"" + outputWAV + "\"",
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden,

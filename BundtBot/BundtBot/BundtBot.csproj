@@ -7,8 +7,8 @@
     <ProjectGuid>{CFBAE8A8-52B3-4AF0-8B73-CBDC243DBCD7}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiscordSharp_Starter</RootNamespace>
-    <AssemblyName>DiscordSharp_Starter</AssemblyName>
+    <RootNamespace>BundtBot</RootNamespace>
+    <AssemblyName>BundtBot</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -49,7 +49,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>DiscordSharp_Starter.BundtBot.Program</StartupObject>
+    <StartupObject>BundtBot.BundtBot.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NAudio, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
@@ -88,6 +88,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BundtBot\Constants.cs" />
     <Compile Include="BundtBot\Reverb.cs" />
     <Compile Include="BundtBot\Echo.cs" />
     <Compile Include="BundtBot\EffectStream.cs" />
@@ -119,8 +120,9 @@
     <Content Include="ffprobe.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="NVorbis.dll" />
-    <Content Include="NVorbis.NAudioSupport.dll" />
+    <Content Include="keys\BotToken.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="youtube-dl.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
