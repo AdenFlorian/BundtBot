@@ -52,7 +52,7 @@ namespace BundtBot.BundtBot {
             }
 
             if (locked) {
-                textChannel.SendMessage("wait your turn...");
+                textChannel.SendMessage("wait your turn...or if you want to be mean, use !stop");
                 return;
             }
 
@@ -86,6 +86,8 @@ namespace BundtBot.BundtBot {
             DiscordVoiceConfig voiceConfig = null;
             bool clientMuted = false;
             bool clientDeaf = false;
+            MyLogger.WriteLine("Connecting to voice channel:" + voiceChannel.Name);
+            MyLogger.WriteLine("\tOn server:  " + voiceChannel.Parent.Name);
             client.ConnectToVoiceChannel(voiceChannel, voiceConfig, clientMuted, clientDeaf);
             locked = true;
         }

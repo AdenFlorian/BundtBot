@@ -79,18 +79,19 @@ namespace BundtBot.BundtBot {
             };
 
             client.VoiceClientDebugMessageReceived += (sender, e) => {
-                //MyLogger.WriteLine("+++VoiceClientDebugLog+++ " + e.message.Message);
+                MyLogger.WriteLine("+++VoiceClientDebugLog+++ " + e.message.Message);
             };
 
             #region ConnectedEvents
             client.Connected += (sender, e) => {
-                MyLogger.WriteLine("Connected! ໒( ͡ᵔ ▾ ͡ᵔ )७", ConsoleColor.Green);
+                MyLogger.WriteLine("Client is Connected! ໒( ͡ᵔ ▾ ͡ᵔ )७", ConsoleColor.Green);
                 MyLogger.WriteLine("Calling client.DisconnectFromVoice()");
                 client.DisconnectFromVoice();
                 MyLogger.WriteLine("Calling client.UpdateCurrentGame()");
                 client.UpdateCurrentGame("all of you");
             };
             client.VoiceClientConnected += (sender, e) => {
+                MyLogger.WriteLine("Voice Client is Connected! ( ͡↑ ͜ʖ ͡↑)", ConsoleColor.Green);
                 DiscordVoiceClient voiceClient = client.GetVoiceClient();
                 if (voiceClient == null) {
                     client.DisconnectFromVoice();

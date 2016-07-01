@@ -16,6 +16,7 @@ namespace BundtBot.BundtBot {
     class MessageReceivedProcessor {
 
         public void ProcessMessage(DiscordClient client, SoundBoard soundBoard, DiscordMessageEventArgs eventArgs) {
+            #region boring commands
             if (eventArgs.MessageText == "!admin") {
                 var admin = eventArgs.Author.Roles.Find(x => x.Name.Contains("Administrator"));
                 string msg;
@@ -65,6 +66,7 @@ namespace BundtBot.BundtBot {
             if (eventArgs.MessageText == "!dog") {
                 Dog(eventArgs, "i found a dog");
             }
+            #endregion
 
             #region SoundBoard
 
@@ -99,7 +101,7 @@ namespace BundtBot.BundtBot {
 
             if (eventArgs.MessageText.StartsWith("!youtube ") ||
                 eventArgs.MessageText.StartsWith("!yt ")) {
-
+                // First validate the command is correct
                 var ytSearchString = "";
 
                 var commandString = eventArgs.MessageText.Trim();
@@ -114,7 +116,14 @@ namespace BundtBot.BundtBot {
                     eventArgs.Channel.SendMessage("you're doing it wrong (or something broke)");
                     return;
                 }
+                
+                // Then check if soundboard is locked
+                if (soundBoard.locked) {
+                    eventArgs.Channel.SendMessage("wait your turn...or if you want to be mean, use !stop");
+                    return;
+                }
 
+                // Then make sure they are in a voice channel
                 if (eventArgs.Author.CurrentVoiceChannel == null) {
                     eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
                     return;
@@ -148,11 +157,6 @@ namespace BundtBot.BundtBot {
                     eventArgs.Channel.SendMessage("that video doesn't work, sorry, try something else");
                     return;
                 }
-
-                if (soundBoard.locked) {
-                    eventArgs.Channel.SendMessage("wait your turn...");
-                    return;
-                }
                 soundBoard.locked = true;
 
                 soundBoard.nextSound = args;
@@ -160,6 +164,8 @@ namespace BundtBot.BundtBot {
                 DiscordVoiceConfig voiceConfig = null;
                 bool clientMuted = false;
                 bool clientDeaf = false;
+                MyLogger.WriteLine("Connecting to voice channel:" + eventArgs.Author.CurrentVoiceChannel.Name);
+                MyLogger.WriteLine("\tOn server:  " + eventArgs.Author.CurrentVoiceChannel.Parent.Name);
                 client.ConnectToVoiceChannel(eventArgs.Author.CurrentVoiceChannel, voiceConfig, clientMuted, clientDeaf);
             }
             #endregion
