@@ -1,110 +1,105 @@
 ﻿using BundtBot.BundtBot;
-using DiscordSharp;
-using DiscordSharp.Events;
-using DiscordSharp.Objects;
+using Discord;
+using Discord.Audio;
+using NString;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
-using WebSocketSharp;
 using WrapYoutubeDl;
 
 namespace BundtBot.BundtBot {
     class MessageReceivedProcessor {
 
-        public void ProcessMessage(DiscordClient client, SoundBoard soundBoard, DiscordMessageEventArgs eventArgs) {
+        public async Task ProcessMessage(DiscordClient client, SoundBoard soundBoard, MessageEventArgs e) {
             #region boring commands
-            if (eventArgs.MessageText == "!admin") {
-                var admin = eventArgs.Author.Roles.Find(x => x.Name.Contains("Administrator"));
+            if (e.Message.Text == "!admin") {
                 string msg;
-                if (admin != null) {
-                    msg = "Yes, you are! :D";
+                if (e.User.ServerPermissions.Administrator) {
+                    msg = "Yes, you are! ┌( ಠ‿ಠ)┘";
                 } else {
-                    msg = "No, you aren't :c";
+                    msg = "No, you aren't (-_-｡), but these people are!";
+                    var admins = e.Server.Users.Where(x => x.ServerPermissions.Administrator);
+                    foreach (var admin in admins) {
+                        msg += $" | {admin.Name} | ";
+                    }
                 }
-                eventArgs.Channel.SendMessage(msg);
+                await e.Channel.SendMessage(msg);
             }
-            if (eventArgs.MessageText == "!mod") {
+            if (e.Message.Text == "!mod") {
                 bool ismod = false;
-                List<DiscordRole> roles = eventArgs.Author.Roles;
-                foreach (DiscordRole role in roles) {
+                var roles = e.User.Roles;
+                foreach (var role in roles) {
                     if (role.Name.Contains("mod")) {
                         ismod = true;
                     }
                 }
                 if (ismod) {
-                    eventArgs.Channel.SendMessage("Yes, you are! :D");
+                    await e.Channel.SendMessage("Yes, you are! :D");
                 } else {
-                    eventArgs.Channel.SendMessage("No, you aren't D:");
+                    await e.Channel.SendMessage("No, you aren't D:");
                 }
             }
-            if (eventArgs.MessageText == "!help") {
-                eventArgs.Channel.SendMessage("!owsb <character name> <phrase>");
-                eventArgs.Channel.SendMessage("created by @AdenFlorian");
-                eventArgs.Channel.SendMessage("https://github.com/AdenFlorian/DiscordSharp_Starter");
-                eventArgs.Channel.SendMessage("https://trello.com/b/VKqUgzwV/bundtbot#");
+            if (e.Message.Text == "!help") {
+                await e.Channel.SendMessage("!owsb <character name> <phrase>");
+                await e.Channel.SendMessage("created by @AdenFlorian");
+                await e.Channel.SendMessage("https://github.com/AdenFlorian/DiscordSharp_Starter");
+                await e.Channel.SendMessage("https://trello.com/b/VKqUgzwV/bundtbot#");
             }
-            if (eventArgs.MessageText == "!cat") {
-                Random rand = new Random();
-                if (rand.NextDouble() >= 0.5) {
-                    string s;
-                    using (WebClient webclient = new WebClient()) {
-                        s = webclient.DownloadString("http://random.cat/meow");
-                        int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
-                        int pTo = s.LastIndexOf("\"}");
-                        string cat = s.Substring(pFrom, pTo - pFrom);
-                        Console.WriteLine("http://random.cat/i/" + cat);
-                        eventArgs.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
-                    }
-                } else {
-                    Dog(eventArgs, "how about a dog instead");
-                }
+            if (e.Message.Text == "!cat") {
+                await Cat(e);
             }
-            if (eventArgs.MessageText == "!dog") {
-                Dog(eventArgs, "i found a dog");
+            if (e.Message.Text == "!dog") {
+                await Dog(e, "i found a dog");
             }
             #endregion
 
             #region SoundBoard
 
-            if (eventArgs.MessageText == "!stop") {
-                if (client.GetVoiceClient() == null) {
-                    eventArgs.Channel.SendMessage("stop what? (client.GetVoiceClient() returned null)");
-                } else if (client.GetVoiceClient().Connected == false) {
-                    eventArgs.Channel.SendMessage("stop what? (client.GetVoiceClient().Connected == false)");
+            if (e.Message.Text == "!stop") {
+                var audioClient = e.Server.GetAudioClient();
+                if (audioClient == null) {
+                    await e.Channel.SendMessage("stop what? (client.GetVoiceClient() returned null)");
                 } else {
-                    eventArgs.Channel.SendMessage("okay... :disappointed_relieved:");
+                    var msg = await e.Channel.SendMessage("okay...");
+                    audioClient.Clear();
+                    await audioClient.Disconnect();
                     soundBoard.stop = true;
+                    soundBoard.locked = false;
+                    await msg.Edit(msg.Text + ":disappointed_relieved:");
                 }
             }
 
-            if (eventArgs.MessageText.StartsWith("!owsb ") ||
-                eventArgs.MessageText.StartsWith("!sb")) {
+            if (e.Message.Text.StartsWith("!owsb ") ||
+                e.Message.Text.StartsWith("!sb")) {
                 SoundBoardArgs soundBoardArgs = null;
                 try {
-                    soundBoardArgs = new SoundBoardArgs(eventArgs.MessageText);
-                } catch (Exception e) {
-                    eventArgs.Channel.SendMessage("you're doing it wrong");
-                    eventArgs.Channel.SendMessage(e.Message);
+                    soundBoardArgs = new SoundBoardArgs(e.Message.Text);
+                } catch (Exception ex) {
+                    await e.Channel.SendMessage("you're doing it wrong");
+                    await e.Channel.SendMessage(ex.Message);
                 }
 
                 if (soundBoardArgs == null) {
-                    eventArgs.Channel.SendMessage("you're doing it wrong (or something broke)");
+                    await e.Channel.SendMessage("you're doing it wrong (or something broke)");
                     return;
                 }
 
-                soundBoard.Process(eventArgs, soundBoardArgs);
+                await soundBoard.Process(e, soundBoardArgs);
             }
 
-            if (eventArgs.MessageText.StartsWith("!youtube ") ||
-                eventArgs.MessageText.StartsWith("!yt ")) {
+            if (e.Message.Text.StartsWith("!youtube ") ||
+                e.Message.Text.StartsWith("!yt ")) {
+
                 // First validate the command is correct
                 var ytSearchString = "";
 
-                var commandString = eventArgs.MessageText.Trim();
+                var commandString = e.Message.Text.Trim();
 
                 if (commandString.StartsWith("!youtube ") &&
                     commandString.Length > 9) {
@@ -113,19 +108,17 @@ namespace BundtBot.BundtBot {
                     commandString.Length > 4) {
                     ytSearchString = commandString.Substring(4);
                 } else {
-                    eventArgs.Channel.SendMessage("you're doing it wrong (or something broke)");
+                    await e.Channel.SendMessage("you're doing it wrong (or something broke)");
                     return;
                 }
                 
-                // Then check if soundboard is locked
                 if (soundBoard.locked) {
-                    eventArgs.Channel.SendMessage("wait your turn...or if you want to be mean, use !stop");
+                    await e.Channel.SendMessage("wait your turn...or if you want to be mean, use !stop");
                     return;
                 }
-
-                // Then make sure they are in a voice channel
-                if (eventArgs.Author.CurrentVoiceChannel == null) {
-                    eventArgs.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                
+                if (e.User.VoiceChannel == null) {
+                    await e.Channel.SendMessage("you need to be in a voice channel to hear me roar");
                     return;
                 }
 
@@ -138,15 +131,18 @@ namespace BundtBot.BundtBot {
 
                 // See if file exists
                 var possiblePath = mp3OutputFolder + youtubeVideoID + ".wav";
-
+                
                 string outputWAV;
 
                 if (File.Exists(possiblePath) == false) {
-                    outputWAV = YoutubeDownloadAndConvert(eventArgs, ytSearchString, mp3OutputFolder);
+                    string youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
+                    var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
+                    outputWAV = new FFMPEG().ffmpegConvert(youtubeOutput);
+                    await msg.Edit(msg.Text + "finished! Sending data...");
                 } else {
                     MyLogger.WriteLine("WAV file exists already! " + possiblePath, ConsoleColor.Green);
                     outputWAV = possiblePath;
-                    eventArgs.Channel.SendMessage("Wait for it...");
+                    await e.Channel.SendMessage("Wait for it...");
                 }
 
                 var args = new SoundBoardArgs();
@@ -154,106 +150,54 @@ namespace BundtBot.BundtBot {
                 args.deleteAfterPlay = false;
 
                 if (File.Exists(args.soundPath) == false) {
-                    eventArgs.Channel.SendMessage("that video doesn't work, sorry, try something else");
+                    await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
                     return;
                 }
                 soundBoard.locked = true;
 
                 soundBoard.nextSound = args;
 
-                DiscordVoiceConfig voiceConfig = null;
-                bool clientMuted = false;
-                bool clientDeaf = false;
-                MyLogger.WriteLine("Connecting to voice channel:" + eventArgs.Author.CurrentVoiceChannel.Name);
-                MyLogger.WriteLine("\tOn server:  " + eventArgs.Author.CurrentVoiceChannel.Parent.Name);
-                client.ConnectToVoiceChannel(eventArgs.Author.CurrentVoiceChannel, voiceConfig, clientMuted, clientDeaf);
+                var voiceChannel = e.User.VoiceChannel;
+
+
+
+                MyLogger.WriteLine("Connecting to voice channel:" + voiceChannel.Name);
+                MyLogger.WriteLine("\tOn server:  " + voiceChannel.Server.Name);
+                var audioService = client.GetService<AudioService>();
+                var audioClient = await audioService.Join(voiceChannel);
+                await soundBoard.OnConnectedToVoiceChannel(audioService, audioClient);
             }
             #endregion
         }
 
-        private string YoutubeDownloadAndConvert(DiscordMessageEventArgs eventArgs, string ytSearchString, string mp3OutputFolder) {
-            var urlToDownload = "\"ytsearch1:"
-                                + ytSearchString
-                                + "\"";
-            var newFilename = Guid.NewGuid().ToString();
-
-            var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);
-            downloader.ProgressDownload += downloader_ProgressDownload;
-            downloader.FinishedDownload += downloader_FinishedDownload;
-            downloader.ErrorDownload += downloader_ErrorDownload;
-            downloader.StartedDownload += downloader_StartedDownload;
-
-            eventArgs.Channel.SendMessage("Searching youtube for: " + ytSearchString);
-
-            var outputPath = downloader.Download();
-            if (outputPath.IsNullOrEmpty()) {
-                Console.WriteLine("output path is null :( possibly to big filesize", ConsoleColor.Yellow);
-                eventArgs.Channel.SendMessage("ummm...bad news...something broke...the video was probably too big to download, so try somethin else, k?");
-                throw new Exception();
+        private static async Task Cat(MessageEventArgs e) {
+            Random rand = new Random();
+            if (rand.NextDouble() >= 0.5) {
+                using (var webclient = new HttpClient()) {
+                    var s = await webclient.GetStringAsync("http://random.cat/meow");
+                    int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
+                    int pTo = s.LastIndexOf("\"}");
+                    string cat = s.Substring(pFrom, pTo - pFrom);
+                    Console.WriteLine("http://random.cat/i/" + cat);
+                    await e.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
+                }
+            } else {
+                await Dog(e, "how about a dog instead");
             }
-            Console.WriteLine("downloader.Download() Finished! " + outputPath);
-
-            eventArgs.Channel.SendMessage("Download finished! Converting then streaming...");
-
-            // Convert to WAV
-            var outputWAV = outputPath.Substring(0, outputPath.LastIndexOf('.')) + ".wav";
-
-            var ffmpegProcess = new Process();
-
-            var startinfo = new ProcessStartInfo {
-                FileName = @"C:\Users\Bundt\Source\Repos\BundtBot\BundtBot\BundtBot\bin\Debug\ffmpeg.exe",
-                Arguments = "-i \"" + outputPath + "\" \"" + outputWAV + "\"",
-                UseShellExecute = false,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-
-            ffmpegProcess.StartInfo = startinfo;
-
-            ffmpegProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) => {
-                MyLogger.WriteLine("%%FFMPEG%% " + e.Data);
-            };
-
-            ffmpegProcess.Start();
-            ffmpegProcess.BeginOutputReadLine();
-            ffmpegProcess.WaitForExit();
-            
-            File.Delete(outputPath);
-
-            return outputWAV;
         }
 
-        private static void Dog(DiscordSharp.Events.DiscordMessageEventArgs eventArgs, string message) {
+        private static async Task Dog(MessageEventArgs e, string message) {
             try {
-                string s;
-                using (WebClient webclient = new MyWebClient()) {
-                    s = webclient.DownloadString("http://random.dog/woof");
-                    string dog = s;
+                using (var client = new HttpClient()) {
+                    client.BaseAddress = new Uri("http://random.dog");
+                    string dog = await client.GetStringAsync("woof");
                     Console.WriteLine("http://random.dog/" + dog);
-                    eventArgs.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
+                    await e.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
                 }
             } catch (Exception) {
-                eventArgs.Channel.SendMessage("there are no dogs here, who let them out (random.dog is down :dog: :interrobang:)");
+                await e.Channel.SendMessage("there are no dogs here, who let them out (random.dog is down :dog: :interrobang:)");
             }
 
-        }
-
-        static void downloader_FinishedDownload(object sender, DownloadEventArgs e) {
-            Console.WriteLine("Finished Download!");
-        }
-
-        static void downloader_ProgressDownload(object sender, ProgressEventArgs e) {
-            Console.WriteLine(e.Percentage);
-        }
-
-        static void downloader_ErrorDownload(object sender, ProgressEventArgs e) {
-            Console.WriteLine("error");
-        }
-
-        static void downloader_StartedDownload(object sender, DownloadEventArgs e) {
-            Console.WriteLine("yotube-dl process started");
         }
     }
 }

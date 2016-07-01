@@ -1,4 +1,5 @@
-﻿using DiscordSharp;
+﻿using Discord;
+using Discord.Audio;
 using System;
 using System.IO;
 using System.Linq;
@@ -8,13 +9,19 @@ using WebSocketSharp;
 
 namespace BundtBot.BundtBot {
     class Program {
-        static MessageReceivedProcessor msgRcvdProcessor = new MessageReceivedProcessor();
-        static SoundBoard soundBoard;
-        static Random random = new Random();
+        MessageReceivedProcessor msgRcvdProcessor = new MessageReceivedProcessor();
+        SoundBoard soundBoard;
+        Random random = new Random();
+        DiscordClient _client;
 
         const string BOT_TOKEN_PATH = "keys/BotToken.txt";
 
         static void Main(string[] args) {
+            new Program().Start();
+        }
+
+        void Start() {
+
             // Allows stuff like ʘ ͜ʖ ʘ to show in the Console
             Console.OutputEncoding = Encoding.UTF8;
 
@@ -29,32 +36,31 @@ namespace BundtBot.BundtBot {
                 return;
             }
 
-            DiscordClient client = new DiscordClient(botToken, true, true);
-            soundBoard = new SoundBoard(client);
+
+            _client = new DiscordClient(x => {
+                x.LogLevel = LogSeverity.Debug;
+            });
+
+            soundBoard = new SoundBoard(_client);
 
             WriteBundtBotASCIIArtToConsole();
 
-            RegisterEventHandlers(client);
+            _client.Log.Message += (sender, eventArgs) => {
+                Console.WriteLine($"[{eventArgs.Severity}] {eventArgs.Source}: {eventArgs.Message}");
+            };
 
-            // Now, try to connect to Discord.
-            try {
-                MyLogger.WriteLine("Calling client.Connect()");
-                client.Connect();
-            } catch (Exception ex) {
-                MyLogger.WriteException(ex);
-                MyLogger.WriteExitMessageAndReadKey();
-            }
+            RegisterEventHandlers(_client);
+            
+            _client.UsingAudio(x => {
+                x.Mode = AudioMode.Outgoing;
+            });
 
-            // Now to make sure the console doesnt close:
-            //Console.ReadKey(); // If the user presses a key, the bot will shut down.
-            //Console.TreatControlCAsInput = true;
+            _client.ExecuteAndWait(async () => {
+                await _client.Connect(botToken);
+            });
 
-            // I did this because Console.ReadKey() was giving me trouble when starting a Process
-            while (true) {
-                Thread.Sleep(100);
-            }
-            //MyLogger.WriteLine("\nBuh Bye!");
-            //Environment.Exit(0); // Make sure all threads are closed.
+            _client.Disconnect();
+            _client.Dispose();
         }
 
         private static void WriteBundtBotASCIIArtToConsole() {
@@ -71,69 +77,29 @@ namespace BundtBot.BundtBot {
             return token;
         }
 
-        private static void RegisterEventHandlers(DiscordClient client) {
+        void RegisterEventHandlers(DiscordClient client) {
             MyLogger.Write("Registering Event Handlers...");
 
-            client.TextClientDebugMessageReceived += (sender, e) => {
-                //MyLogger.WriteLine("***TextClientDebugLog*** " + e.message.Message);
-            };
-
-            client.VoiceClientDebugMessageReceived += (sender, e) => {
-                MyLogger.WriteLine("+++VoiceClientDebugLog+++ " + e.message.Message);
-            };
-
             #region ConnectedEvents
-            client.Connected += (sender, e) => {
-                MyLogger.WriteLine("Client is Connected! ໒( ͡ᵔ ▾ ͡ᵔ )७", ConsoleColor.Green);
-                MyLogger.WriteLine("Calling client.DisconnectFromVoice()");
-                client.DisconnectFromVoice();
-                MyLogger.WriteLine("Calling client.UpdateCurrentGame()");
-                client.UpdateCurrentGame("all of you");
-            };
-            client.VoiceClientConnected += (sender, e) => {
-                MyLogger.WriteLine("Voice Client is Connected! ( ͡↑ ͜ʖ ͡↑)", ConsoleColor.Green);
-                DiscordVoiceClient voiceClient = client.GetVoiceClient();
-                if (voiceClient == null) {
-                    client.DisconnectFromVoice();
-                    return;
-                }
-
-                var defaultTextChannel = voiceClient.Channel.Parent
-                    .Channels.First();
-
-                try {
-                    soundBoard.OnConnectedToVoiceChannel(voiceClient);
-                } catch (Exception ex) {
-                    MyLogger.WriteLine(ex.Message, ConsoleColor.Red);
-                    MyLogger.WriteLine(ex.StackTrace, ConsoleColor.Yellow);
-                    soundBoard.locked = false;
-                    defaultTextChannel.SendMessage("bundtbot is brokebot");
-                    client.DisconnectFromVoice();
-                }
+            _client.Ready += (sender, e) => {
+                MyLogger.WriteLine("Client is Ready/Connected! ໒( ͡ᵔ ▾ ͡ᵔ )७", ConsoleColor.Green);
+                MyLogger.WriteLine("Calling _client.DisconnectFromVoice()");
+                //_client.DisconnectFromVoice();
+                MyLogger.WriteLine("Calling _client.UpdateCurrentGame()");
+                _client.SetGame("armada");
             };
             #endregion
 
             #region MessageEvents
-            client.PrivateMessageDeleted += (sender, e) => {
+            _client.MessageDeleted += (sender, e) => {
 
             };
-            client.PrivateMessageReceived += (sender, e) => {
-                if (e.Message == "!help") {
-                    e.Author.SendMessage("this is a private message, what did you expect");
-                } else if (e.Message.StartsWith("join")) {
-                    e.Author.SendMessage("Please use this url instead!" +
-                        "https://discordapp.com/oauth2/authorize?client_id=[CLIENT_ID]&scope=bot&permissions=0");
-                }
-            };
-            client.MessageDeleted += (sender, e) => {
+            _client.MessageUpdated += (sender, e) => {
 
             };
-            client.MessageEdited += (sender, e) => {
-
-            };
-            client.MessageReceived += (sender, e) => {
+            _client.MessageReceived += async (sender, e) => {
                 try {
-                    msgRcvdProcessor.ProcessMessage(client, soundBoard, e);
+                    await msgRcvdProcessor.ProcessMessage(_client, soundBoard, e);
                 } catch (Exception ex1) {
                     MyLogger.WriteLine("Caught Exception from msgRcvdProcessor.ProcessMessage(client, soundBoard, e)", ConsoleColor.Red);
                     MyLogger.WriteLine(ex1.Message, ConsoleColor.Red);
@@ -141,7 +107,7 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteLine("Going to wait a second then try to send a message to a text channel saying that we broke");
                     Thread.Sleep(1000);
                     try {
-                        e.Channel.SendMessage("bundtbot is brokebot");
+                        await e.Channel.SendMessage("bundtbot is brokebot");
                     } catch (Exception ex2) {
                         MyLogger.WriteLine("It really broke this time:");
                         MyLogger.WriteLine(ex2.Message, ConsoleColor.Red);
@@ -151,44 +117,51 @@ namespace BundtBot.BundtBot {
             #endregion
 
             #region ChannelEvents
-            client.ChannelCreated += (sender, e) => {
-                e.ChannelCreated.SendMessage("less is more");
+            _client.ChannelCreated += (sender, e) => {
+                e.Channel.SendMessage("less is more");
             };
-            client.ChannelDeleted += (sender, e) => {
-                e.ChannelDeleted.SendMessage("RIP in pieces " + e.ChannelDeleted.Name);
+            _client.ChannelDestroyed += (sender, e) => {
+                e.Channel.SendMessage("RIP in pieces " + e.Channel.Name);
             };
-            client.ChannelUpdated += (sender, e) => {
+            _client.ChannelUpdated += (sender, e) => {
             };
             #endregion
 
             #region GuildEvents
-            client.GuildAvailable += (sender, e) => {
-                MyLogger.Write("Guild available! ");
+            _client.ServerAvailable += async (sender, e) => {
+                MyLogger.Write("Server available! ");
                 MyLogger.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
-                e.Server.ChangeMemberNickname(client.Me, "bundtbot");
+                float version = 0.1f;
+
+                Thread.Sleep(random.Next(0, 100));
+
+                while (true) {
+                    try {
+                        await e.Server.CurrentUser.Edit(nickname: "bundtbot " + version);
+                        version += 0.01f;
+                        Thread.Sleep(10000);
+                    } catch (Exception) {
+                    }
+                }
             };
-            client.GuildCreated += (sender, e) => {
-                MyLogger.WriteLine("Guild created!");
-            };
-            client.GuildDeleted += (sender, e) => {
-            };
-            client.GuildUpdated += (sender, e) => {
+            _client.JoinedServer += (sender, e) => {
+                MyLogger.WriteLine("Joined Server! " + e.Server.Name);
             };
             #endregion
 
             #region GuildMemberEvents
-            client.GuildMemberBanned += (sender, e) => {
+            _client.UserBanned += (sender, e) => {
             };
-            client.GuildMemberUpdated += (sender, e) => {
+            _client.UserUpdated += (sender, e) => {
             };
             #endregion
 
             #region UserEvents
-            client.UserAddedToServer += (sender, e) => {
-                e.AddedMember.SendMessage("welcome to server");
-                e.AddedMember.SendMessage("beware of the airhorns...");
+            _client.UserJoined += (sender, e) => {
+                e.User.Server.DefaultChannel.SendMessage("welcome to server " + e.User.NicknameMention);
+                e.User.Server.DefaultChannel.SendMessage("beware of the airhorns...");
             };
-            client.UserJoinedVoiceChannel += (sender, e) => {
+            /*_client.UserJoinedVoiceChannel += (sender, e) => {
                 if (e.User.IsBot) {
                     MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
                     return;
@@ -198,7 +171,7 @@ namespace BundtBot.BundtBot {
                     return;
                 }
                 MyLogger.WriteLine("User joined a voice channel! " + e.User.Username + " : " + e.Channel.Name);
-                e.Guild.ChangeMemberNickname(client.Me, ":blue_heart: " + e.User.Username);
+                e.Guild.ChangeMemberNickname(_client.Me, ":blue_heart: " + e.User.Username);
                 var list = new[] {
                     Tuple.Create("reinhardt", "hello"),
                     Tuple.Create("genji", "hello"),
@@ -211,17 +184,9 @@ namespace BundtBot.BundtBot {
                 var x = list[i];
                 MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
                 soundBoard.Process(null, e.Channel, x.Item1, x.Item2);
-            };
-            client.UserLeftVoiceChannel += (sender, e) => {
-            };
-            client.UserRemovedFromServer += (sender, e) => {
-                e.Server.Channels.First().SendMessage("RIP in pieces " + e.MemberRemoved.Username);
-            };
-            client.UserSpeaking += (sender, e) => {
-            };
-            client.UserTypingStart += (sender, e) => {
-            };
-            client.UserUpdate += (sender, e) => {
+            };*/
+            _client.UserLeft += (sender, e) => {
+                e.Server.DefaultChannel.SendMessage("RIP in pieces " + e.User.Nickname);
             };
             #endregion
 

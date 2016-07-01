@@ -1,25 +1,25 @@
 ﻿using BundtBot.BundtBot;
-using DiscordSharp;
-using DiscordSharp.Events;
-using DiscordSharp.Objects;
+using Discord;
+using Discord.Audio;
+using NAudio;
 using NAudio.Wave;
-using NVorbis;
-using NVorbis.NAudioSupport;
+using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BundtBot.BundtBot {
     class SoundBoard {
-        
+
         public bool locked = false;
         public bool stop = false;
         public SoundBoardArgs nextSound;
 
-        DiscordChannel lastChannel = null;
+        Channel lastChannel = null;
         DiscordClient client;
         Random random = new Random();
 
@@ -30,36 +30,39 @@ namespace BundtBot.BundtBot {
             this.client = client;
         }
 
-        public void Process(DiscordMessageEventArgs eventArgs, SoundBoardArgs soundBoardArgs) {
-            Process(eventArgs.Channel, eventArgs.Author.CurrentVoiceChannel, soundBoardArgs);
+        public async Task Process(MessageEventArgs eventArgs, SoundBoardArgs soundBoardArgs) {
+            await Process(eventArgs.Channel, eventArgs.User.VoiceChannel, soundBoardArgs);
         }
 
-        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, string actorName, string soundName) {
+        public async Task Process(Channel textChannel, Channel voiceChannel, string actorName, string soundName) {
             var soundBoardArgs = new SoundBoardArgs {
                 actorName = actorName,
                 soundName = soundName
             };
-            Process(textChannel, voiceChannel, soundBoardArgs);
+            await Process(textChannel, voiceChannel, soundBoardArgs);
         }
 
-        public void Process(DiscordChannel textChannel, DiscordChannel voiceChannel, SoundBoardArgs soundBoardArgs) {
+        public async Task Process(Channel textChannel, Channel voiceChannel, SoundBoardArgs soundBoardArgs) {
+
+            if (locked) {
+                await textChannel.SendMessage("wait your turn...or if you want to be mean, use !stop");
+                return;
+            }
+
+            locked = true;
+
             if (textChannel == null) {
-                textChannel = voiceChannel.Parent.Channels.First(x => x.Type == ChannelType.Text);
+                textChannel = voiceChannel.Server.DefaultChannel;
                 if (textChannel == null) {
                     Console.WriteLine("somebody broke me :(");
                     return;
                 }
             }
 
-            if (locked) {
-                textChannel.SendMessage("wait your turn...or if you want to be mean, use !stop");
-                return;
-            }
-
             lastChannel = textChannel;
 
             if (voiceChannel == null) {
-                textChannel.SendMessage("you need to be in a voice channel to hear me roar");
+                await textChannel.SendMessage("you need to be in a voice channel to hear me roar");
                 return;
             }
 
@@ -68,14 +71,15 @@ namespace BundtBot.BundtBot {
             CheckActorName(ref soundBoardArgs.actorName);
 
             CheckSoundName(ref soundBoardArgs.soundName, soundBoardArgs.actorName);
-            
+
             soundFilePath = basePath + soundBoardArgs.actorName + slash + soundBoardArgs.soundName + ".mp3";
 
             Console.Write("looking for " + soundFilePath + "\t");
 
             if (!File.Exists(soundFilePath)) {
                 MyLogger.WriteLine("didn't find it...", ConsoleColor.Red);
-                lastChannel.SendMessage("these are not the sounds you're looking for...");
+                await lastChannel.SendMessage("these are not the sounds you're looking for...");
+                locked = false;
                 return;
             }
 
@@ -83,76 +87,71 @@ namespace BundtBot.BundtBot {
             soundBoardArgs.soundPath = soundFilePath;
             nextSound = soundBoardArgs;
 
-            DiscordVoiceConfig voiceConfig = null;
-            bool clientMuted = false;
-            bool clientDeaf = false;
             MyLogger.WriteLine("Connecting to voice channel:" + voiceChannel.Name);
-            MyLogger.WriteLine("\tOn server:  " + voiceChannel.Parent.Name);
-            client.ConnectToVoiceChannel(voiceChannel, voiceConfig, clientMuted, clientDeaf);
-            locked = true;
+            MyLogger.WriteLine("\tOn server:  " + voiceChannel.Server.Name);
+            var audioService = client.GetService<AudioService>();
+            await audioService.Join(voiceChannel);
+            await OnConnectedToVoiceChannel(audioService, audioService.GetClient(voiceChannel.Server));
         }
 
         [SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
-        public void OnConnectedToVoiceChannel(DiscordVoiceClient voiceClient) {
-
+        public async Task OnConnectedToVoiceChannel(AudioService audioService, IAudioClient audioClient) {
             string soundFilePath = nextSound.soundPath;
-
-            int ms = voiceClient.VoiceConfig.FrameLengthMs;
-            int channels = 1;
+            int ms = audioService.Config.BufferLength;
+            int channels = audioService.Config.Channels;
             int sampleRate = 48000;
             int waitTimeMS = 0;
-
-            int blockSize = 48 * 2 * channels * ms; //sample rate * 2 * channels * milliseconds
-            byte[] buffer = new byte[blockSize];
             var outFormat = new WaveFormat(sampleRate, 16, channels);
-            voiceClient.SetSpeaking(true);
-            
+
             // Just an extra check to keep the bot from blowing people's ears out
             if (nextSound.volume > 1.1f) {
-                throw new ArgumentException("Voluem should never be greater than 1!");
+                throw new ArgumentException("Volume should never be greater than 1!");
             } else if (nextSound.volume == 0) {
                 nextSound.volume = 1;
             }
 
-            using (var audioFileStream = new MediaFoundationReader(soundFilePath)) 
-            using (var waveChannel32 = new WaveChannel32(audioFileStream, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false }) 
-            using (var effectStream = new EffectStream(waveChannel32)) 
-            using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream)) 
-            using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat) { ResamplerQuality = 60 }) {
+            using (var audioFileStream = new MediaFoundationReader(soundFilePath))
+            using (var waveChannel32 = new WaveChannel32(audioFileStream, nextSound.volume * 0.25f, 0f) { PadWithZeroes = false })
+            using (var effectStream = new EffectStream(waveChannel32))
+            using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))
+            using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat)) {
+                resampler.ResamplerQuality = 60;
                 ApplyEffects(waveChannel32, effectStream);
-                
-                while ((resampler.Read(buffer, 0, blockSize)) > 0) {
-                    waitTimeMS += ms;
 
-                    // Limit sound length (--length)
+                // Establish the size of our AudioBuffer
+                int blockSize = outFormat.AverageBytesPerSecond / 50;
+                byte[] buffer = new byte[blockSize];
+                int byteCount;
+
+                //await audioClient.Server.DefaultChannel.SendMessage("here it comes!");
+
+                // Read audio into our buffer, and keep a loop open while data is present
+                while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                    // Limit play length (--length)
+                    waitTimeMS += ms;
                     if (nextSound.length_ms > 0 && waitTimeMS > nextSound.length_ms) {
                         break;
                     }
 
-                    if (voiceClient.Connected == false || stop == true) {
+                    if (byteCount < blockSize) {
+                        // Incomplete Frame
+                        for (int i = byteCount; i < blockSize; i++)
+                            buffer[i] = 0;
+                    }
+                    if (audioClient.State == ConnectionState.Disconnected) {
                         break;
                     }
 
-                    voiceClient.SendVoice(buffer);
+                    // Send the buffer to Discord
+                    audioClient.Send(buffer, 0, blockSize);
                 }
                 MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Yellow);
             }
-
-            int paddingMS = 1000;
-            var totalWaitTimeMS = waitTimeMS + paddingMS;
-
-            MyLogger.WriteLine("Waiting for " + totalWaitTimeMS + "ms");
-
-            for (int i = 0; i < totalWaitTimeMS; i += 500) {
-                if (stop) {
-                    stop = false;
-                    break;
-                }
-                Thread.Sleep(500);
-            }
             
-            client.DisconnectFromVoice();
+            audioClient.Wait();
+            await audioClient.Disconnect();
             locked = false;
+
             if (nextSound.deleteAfterPlay) {
                 MyLogger.WriteLine("Deleting sound file: " + nextSound.soundPath, ConsoleColor.Yellow);
                 File.Delete(soundFilePath);
