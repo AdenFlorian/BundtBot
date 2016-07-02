@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BundtBot.BundtBot {
-    class SoundBoardArgs {
+    class Sound {
         #region Required
         public string actorName;
         public string soundName;
@@ -27,11 +27,11 @@ namespace BundtBot.BundtBot {
             get { return (int)(length_seconds * 1000); }
         }
 
-        public SoundBoardArgs() {
+        public Sound() {
 
         }
 
-        public SoundBoardArgs(string commandString) {
+        public Sound(string commandString) {
             // Command should have 3 words separated by spaces
             // 1. !owsb (or !sb)
             // 2. actor

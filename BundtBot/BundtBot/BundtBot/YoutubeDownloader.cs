@@ -7,8 +7,8 @@ using WrapYoutubeDl;
 namespace BundtBot.BundtBot {
     class YoutubeDownloader {
 
-        Message progressMessage;
-        decimal lastPercentage = 0;
+        Message _progressMessage;
+        decimal _lastPercentage = 0;
 
         public async Task<string> YoutubeDownloadAndConvert(MessageEventArgs e, string ytSearchString, string mp3OutputFolder) {
             var urlToDownload = "\"ytsearch1:"
@@ -16,24 +16,22 @@ namespace BundtBot.BundtBot {
                                 + "\"";
             var newFilename = Guid.NewGuid().ToString();
 
-            progressMessage = await e.Channel.SendMessage("downloading");
-
             var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);
             downloader.ProgressDownload += async (object sender, ProgressEventArgs ev) => {
                 Console.WriteLine(ev.Percentage);
-                if (ev.Percentage > lastPercentage + 50) {
-                    await progressMessage.Edit("downloading: " + ev.Percentage);
+                if (ev.Percentage > _lastPercentage + 50) {
+                    await _progressMessage.Edit("downloading: " + ev.Percentage);
                 }
-                lastPercentage = ev.Percentage;
+                _lastPercentage = ev.Percentage;
             };
             downloader.FinishedDownload += async (object sender, DownloadEventArgs ev) => {
                 Console.WriteLine("Finished Download!");
-                await progressMessage.Edit("yt download progress: :100: ");
+                await _progressMessage.Edit("downloading: :100: ");
             };
             downloader.ErrorDownload += downloader_ErrorDownload;
             downloader.StartedDownload += downloader_StartedDownload;
 
-            await e.Channel.SendMessage("Searching youtube for: " + ytSearchString);
+            _progressMessage = await e.Channel.SendMessage("downloading");
 
             var outputPath = downloader.Download();
             if (outputPath.IsNullOrEmpty()) {
