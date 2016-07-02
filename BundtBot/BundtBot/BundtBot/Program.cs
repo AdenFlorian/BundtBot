@@ -9,10 +9,10 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using WrapYoutubeDl;
 
 namespace BundtBot.BundtBot {
     class Program {
-        MessageReceivedProcessor _msgRcvdProcessor = new MessageReceivedProcessor();
         SoundBoard _soundBoard;
         Random _random = new Random();
         DiscordClient _client;
@@ -86,6 +86,18 @@ namespace BundtBot.BundtBot {
 
         void SetupCommands() {
             var commandService = _client.GetService<CommandService>();
+
+            #region CommandEvents
+            commandService.CommandErrored += async (s, e) => {
+                MyLogger.WriteLine("[CommandErrored] " + e.Exception.Message, ConsoleColor.DarkMagenta);
+                await e.Channel.SendMessage(e.Exception.Message);
+            };
+            commandService.CommandExecuted += (s, e) => {
+                MyLogger.WriteLine("[CommandExecuted] " + e.Command.Text, ConsoleColor.DarkCyan);
+            };
+            #endregion
+
+            #region boring commands
             commandService.CreateCommand("credits")
                 .Alias(new string[] { "github" })
                 .Description("Prints who made this thing.")
@@ -97,13 +109,13 @@ namespace BundtBot.BundtBot {
                         + "\nhttps://trello.com/b/VKqUgzwV/bundtbot#");
                 });
             commandService.CreateCommand("cat")
-                .Alias(new string[] { "kitty", "feline", "Felis_catus", "kitten" })
+                .Alias(new string[] { "kitty", "feline", "Felis_catus", "kitten", "🐱", "🐈" })
                 .Description("It's a secret.")
                 .Do(async e => {
                     await Cat(e);
                 });
             commandService.CreateCommand("dog")
-                .Alias(new string[] { "doggy", "puppy", "Canis_lupus_familiaris" })
+                .Alias(new string[] { "doggy", "puppy", "Canis_lupus_familiaris", "🐶", "🐕" })
                 .Description("The superior alternaitve to !cat.")
                 .Do(async e => {
                     await Dog(e, "i found a dog");
@@ -124,6 +136,146 @@ namespace BundtBot.BundtBot {
                     }
                     await e.Channel.SendMessage(msg);
                 });
+            commandService.CreateCommand("mod")
+                .Alias(new string[] { "moderator" })
+                .Description("Find out if you are a mod.")
+                .Do(async e => {
+                    if (e.User.Roles.Any(x => x.Name.Equals("mod"))) {
+                        await e.Channel.SendMessage("Yes, you are! ┌( ಠ‿ಠ)┘");
+                    } else {
+                        await e.Channel.SendMessage("No, you aren't (-_-｡)");
+                    }
+                });
+            commandService.CreateCommand("me")
+                .Alias(new string[] { "mystatus" })
+                .Description("Find out you status in life.")
+                .Do(async e => {
+                    await e.Channel.SendMessage("Voice channel: " + e.User.VoiceChannel?.Name);
+                });
+            #endregion
+
+            #region SoundBoard
+            commandService.CreateCommand("stop")
+                .Alias(new string[] { "shutup", "stfu", "👎", "🚫🎶", "🚫 🎶" })
+                .Description("Please don't stop the :notes:.")
+                .Do(async e => {
+                    var audioClient = e.Server.GetAudioClient();
+                    if (audioClient == null) {
+                        var msg = await e.Channel.SendMessage("stop what?");
+                        await msg.Edit(msg.Text + " I unlocked the soundboard for you, hope that helps :grimacing: ");
+                    } else {
+                        var msg = await e.Channel.SendMessage("okay...");
+                        audioClient.Clear();
+                        await audioClient.Disconnect();
+                        await msg.Edit(msg.Text + ":disappointed_relieved:");
+                    }
+                    _soundBoard.stop = true;
+                    _soundBoard.locked = false;
+                });
+            commandService.CreateCommand("sb")
+                .AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
+                .Alias(new string[] { "owsb" })
+                .Description("Sound board. It plays sounds with its mouth.")
+                .Parameter("sound args", ParameterType.Unparsed)
+                .Do(async e => {
+                    Sound soundBoardArgs = null;
+                    try {
+                        soundBoardArgs = new Sound(e.Message.Text);
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage("you're doing it wrong");
+                        await e.Channel.SendMessage(ex.Message);
+                    }
+
+                    if (soundBoardArgs == null) {
+                        await e.Channel.SendMessage("you're doing it wrong (or something broke)");
+                        return;
+                    }
+
+                    await _soundBoard.Process(e, soundBoardArgs);
+                });
+            commandService.CreateCommand("youtube")
+                // TODO These checks seem to be broken
+                //.AddCheck((c, u, x) => _soundBoard.locked == false, Constants.SOUNDBOARD_LOCKED)
+                //.AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
+                .Alias(new string[] { "yt" })
+                .Description("It's a tube for you!")
+                .Parameter("search string", ParameterType.Unparsed)
+                .Do(async e => {
+                    // First validate the command is correct
+                    var ytSearchString = "";
+
+                    var commandString = e.Message.Text.Trim();
+
+                    if (commandString.StartsWith("!youtube ") &&
+                        commandString.Length > 9) {
+                        ytSearchString = commandString.Substring(9);
+                    } else if (commandString.StartsWith("!yt ") &&
+                        commandString.Length > 4) {
+                        ytSearchString = commandString.Substring(4);
+                    } else {
+                        await e.Channel.SendMessage("you're doing it wrong (or something broke)");
+                        return;
+                    }
+
+                    if (_soundBoard.locked) {
+                        await e.Channel.SendMessage("wait your turn...or if you want to be mean, use !stop");
+                        return;
+                    }
+
+                    var voiceChannel = e.User.VoiceChannel;
+
+                    if (voiceChannel == null) {
+                        await e.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                        return;
+                    }
+
+                    await e.Channel.SendMessage("Searching youtube for: " + ytSearchString);
+
+                    // Get video id
+                    MyLogger.WriteLine("Getting youtube video id...");
+                    var youtubeVideoID = new YoutubeVideoID().Get(ytSearchString);
+                    MyLogger.WriteLine("Youtube video ID get! " + youtubeVideoID, ConsoleColor.Green);
+
+                    MyLogger.WriteLine("Getting youtube video title...");
+                    var youtubeVideoTitle = new YoutubeVideoName().Get(ytSearchString);
+                    MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
+                    await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
+
+                    var mp3OutputFolder = "c:/@mp3/";
+
+                    // See if file exists
+                    var possiblePath = mp3OutputFolder + youtubeVideoID + ".wav";
+
+                    string outputWAV;
+
+                    if (File.Exists(possiblePath) == false) {
+                        string youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
+                        var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
+                        outputWAV = new FFMPEG().ffmpegConvert(youtubeOutput);
+                        await msg.Edit(msg.Text + "finished! Sending data...");
+                    } else {
+                        MyLogger.WriteLine("WAV file exists already! " + possiblePath, ConsoleColor.Green);
+                        outputWAV = possiblePath;
+                        await e.Channel.SendMessage("Playing audio from cache...");
+                    }
+
+                    var args = new Sound();
+                    args.soundPath = outputWAV;
+                    args.deleteAfterPlay = false;
+
+                    if (File.Exists(args.soundPath) == false) {
+                        await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
+                        return;
+                    }
+                    _soundBoard.locked = true;
+
+                    MyLogger.WriteLine("Connecting to voice channel:" + voiceChannel.Name);
+                    MyLogger.WriteLine("\tOn server:  " + voiceChannel.Server.Name);
+                    var audioService = _client.GetService<AudioService>();
+                    var audioClient = await audioService.Join(voiceChannel);
+                    new AudioStreamer().PlaySound(audioService, audioClient, args);
+                });
+            #endregion
         }
 
         void WriteBundtBotASCIIArtToConsole() {
@@ -158,22 +310,7 @@ namespace BundtBot.BundtBot {
             _client.MessageUpdated += (sender, e) => {
 
             };
-            _client.MessageReceived += async (sender, e) => {
-                try {
-                    await _msgRcvdProcessor.ProcessMessage(_client, _soundBoard, e);
-                } catch (Exception ex1) {
-                    MyLogger.WriteLine("Caught Exception from msgRcvdProcessor.ProcessMessage(client, soundBoard, e)", ConsoleColor.Red);
-                    MyLogger.WriteLine(ex1.Message, ConsoleColor.Red);
-                    MyLogger.WriteLine(ex1.StackTrace, ConsoleColor.Yellow);
-                    MyLogger.WriteLine("Going to wait a second then try to send a message to a text channel saying that we broke");
-                    Thread.Sleep(1000);
-                    try {
-                        await e.Channel.SendMessage("bundtbot is brokebot");
-                    } catch (Exception ex2) {
-                        MyLogger.WriteLine("It really broke this time:");
-                        MyLogger.WriteLine(ex2.Message, ConsoleColor.Red);
-                    }
-                }
+            _client.MessageReceived += (sender, e) => {
             };
             #endregion
 

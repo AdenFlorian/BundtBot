@@ -13,5 +13,9 @@ namespace BundtBot.BundtBot {
             + @"|  __  (| | | |  _ \ / _  (_   _)  __  ( / _ (_   _)" + "\n"
             + @"| |__)  ) |_| | | | ( (_| | | |_| |__)  ) |_| || |_ " + "\n"
             + @"|______/|____/|_| |_|\____|  \__)______/ \___/  \__)";
+
+        public const string NOT_IN_VOICE = "you need to be in a voice channel to hear me roar";
+        public const string SOUNDBOARD_LOCKED = "you need to be in a voice channel to hear me roar";
     }
+    
 }

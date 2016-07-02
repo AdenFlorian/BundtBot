@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Audio;
+using Discord.Commands;
 using System;
 using System.IO;
 using System.Linq;
@@ -20,16 +21,16 @@ namespace BundtBot.BundtBot {
             _client = client;
         }
 
-        public async Task Process(MessageEventArgs eventArgs, Sound soundBoardArgs) {
-            await Process(eventArgs.Channel, eventArgs.User.VoiceChannel, soundBoardArgs);
+        public async Task Process(CommandEventArgs e, Sound sound) {
+            await Process(e.Channel, e.User.VoiceChannel, sound);
         }
 
         public async Task Process(Channel textChannel, Channel voiceChannel, string actorName, string soundName) {
-            var soundBoardArgs = new Sound {
+            var sound = new Sound {
                 actorName = actorName,
                 soundName = soundName
             };
-            await Process(textChannel, voiceChannel, soundBoardArgs);
+            await Process(textChannel, voiceChannel, sound);
         }
 
         /// <summary>

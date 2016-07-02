@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using NString;
 using System;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace BundtBot.BundtBot {
         Message _progressMessage;
         decimal _lastPercentage = 0;
 
-        public async Task<string> YoutubeDownloadAndConvert(MessageEventArgs e, string ytSearchString, string mp3OutputFolder) {
+        public async Task<string> YoutubeDownloadAndConvert(CommandEventArgs e, string ytSearchString, string mp3OutputFolder) {
             var urlToDownload = "\"ytsearch1:"
                                 + ytSearchString
                                 + "\"";
