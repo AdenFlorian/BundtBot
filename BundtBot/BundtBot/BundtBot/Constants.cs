@@ -16,6 +16,7 @@ namespace BundtBot.BundtBot {
 
         public const string NOT_IN_VOICE = "you need to be in a voice channel to hear me roar";
         public const string SOUNDBOARD_LOCKED = "you need to be in a voice channel to hear me roar";
+        public const string INVITE_LINK = "https://discordapp.com/oauth2/authorize?&client_id=188859010173108224&scope=bot&permissions=70376448";
     }
     
 }

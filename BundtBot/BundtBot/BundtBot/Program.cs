@@ -5,10 +5,7 @@ using NString;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using WrapYoutubeDl;
 
 namespace BundtBot.BundtBot {
@@ -112,13 +109,13 @@ namespace BundtBot.BundtBot {
                 .Alias(new string[] { "kitty", "feline", "Felis_catus", "kitten", "🐱", "🐈" })
                 .Description("It's a secret.")
                 .Do(async e => {
-                    await Cat(e);
+                    await CatDog.Cat(e);
                 });
             commandService.CreateCommand("dog")
                 .Alias(new string[] { "doggy", "puppy", "Canis_lupus_familiaris", "🐶", "🐕" })
                 .Description("The superior alternaitve to !cat.")
                 .Do(async e => {
-                    await Dog(e, "i found a dog");
+                    await CatDog.Dog(e, "i found a dog");
                 });
             commandService.CreateCommand("admin")
                 .Alias(new string[] { "administrator" })
@@ -151,6 +148,12 @@ namespace BundtBot.BundtBot {
                 .Description("Find out you status in life.")
                 .Do(async e => {
                     await e.Channel.SendMessage("Voice channel: " + e.User.VoiceChannel?.Name);
+                });
+            commandService.CreateCommand("invite")
+                .Description("Why wasn't I invited?.")
+                .Do(async e => {
+                    await e.Channel.SendMessage("Click this link to invite me to your server: "
+                        + Constants.INVITE_LINK);
                 });
             #endregion
 
@@ -345,45 +348,40 @@ namespace BundtBot.BundtBot {
                 e.User.Server.DefaultChannel.SendMessage("welcome to server " + e.User.NicknameMention);
                 e.User.Server.DefaultChannel.SendMessage("beware of the airhorns...");
             };
-            _client.UserUpdated += async (s, e) => {
-                var voiceChannelBefore = e.Before.VoiceChannel;
-                var voiceChannelAfter = e.After.VoiceChannel;
-                if (voiceChannelBefore != voiceChannelAfter) {
-                    // Then user's voice channel changed
-                    if (voiceChannelBefore != null) {
-                        // OnUserLeaveVoiceChannel
-                        MyLogger.WriteLine(e.After.Name + " left voice channel: " + voiceChannelBefore);
-                    }
-                    if (voiceChannelAfter != null) {
-                        // OnUserJoinVoiceChannel
-                        {
-                            if (e.After.IsBot) {
-                                MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
-                                return;
-                            }
-                            // If AFK channel
-                            /*if (voiceChannelAfter.) {
-                                MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
-                                return;
-                            }*/
-                            MyLogger.WriteLine(e.After.Name + " joined voice channel: " + voiceChannelAfter);
-                            var list = new[] {
-                            Tuple.Create("reinhardt", "hello"),
-                            Tuple.Create("genji", "hello"),
-                            Tuple.Create("mercy", "hello"),
-                            Tuple.Create("torbjorn", "hello"),
-                            Tuple.Create("winston", "hi there"),
-                            Tuple.Create("suhdude", "#random")
-                        };
-                            var i = _random.Next(list.Count());
-                            var x = list[i];
-                            MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
-                            await _soundBoard.Process(null, voiceChannelAfter, x.Item1, x.Item2);
-                        }
-                    }
+            _client.UserUpdated += (s, e) => {
+            };
+            _client.UserJoinedVoiceChannel += async (s, e) => {
+                if (e.User.IsBot) {
+                    MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
+                    return;
                 }
+                // If AFK channel
+                /*if (voiceChannelAfter.) {
+                    MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
+                    return;
+                }*/
+                MyLogger.WriteLine(e.User.Name + " joined voice channel: " + e.Channel);
+                    var list = new[] {
+                    Tuple.Create("reinhardt", "hello"),
+                    Tuple.Create("genji", "hello"),
+                    Tuple.Create("mercy", "hello"),
+                    Tuple.Create("torbjorn", "hello"),
+                    Tuple.Create("winston", "hi there"),
+                    Tuple.Create("suhdude", "#random")
+                };
+                var i = _random.Next(list.Count());
+                var x = list[i];
+                MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
+                await _soundBoard.Process(null, e.Channel, x.Item1, x.Item2);
+            };
+            _client.UserLeftVoiceChannel += (s, e) => {
+                MyLogger.WriteLine(e.User.Name + " left voice channel: " + e.Channel);
             };
             _client.UserLeft += (sender, e) => {
+                // Can't send message to server if we just left it
+                if (e.User.Id == _client.CurrentUser.Id) {
+                    return;
+                }
                 e.Server.DefaultChannel.SendMessage("RIP in pieces " + e.User.Nickname);
             };
             #endregion
@@ -395,36 +393,6 @@ namespace BundtBot.BundtBot {
             #endregion
 
             MyLogger.WriteLine("Done!");
-        }
-
-        async Task Cat(CommandEventArgs e) {
-            Random rand = new Random();
-            if (rand.NextDouble() >= 0.5) {
-                using (var webclient = new HttpClient()) {
-                    var s = await webclient.GetStringAsync("http://random.cat/meow");
-                    int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
-                    int pTo = s.LastIndexOf("\"}");
-                    string cat = s.Substring(pFrom, pTo - pFrom);
-                    Console.WriteLine("http://random.cat/i/" + cat);
-                    await e.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
-                }
-            } else {
-                await Dog(e, "how about a dog instead");
-            }
-        }
-
-        async Task Dog(CommandEventArgs e, string message) {
-            try {
-                using (var client = new HttpClient()) {
-                    client.BaseAddress = new Uri("http://random.dog");
-                    string dog = await client.GetStringAsync("woof");
-                    Console.WriteLine("http://random.dog/" + dog);
-                    await e.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
-                }
-            } catch (Exception) {
-                await e.Channel.SendMessage("there are no dogs here, who let them out (random.dog is down :dog: :interrobang:)");
-            }
-
         }
     }
 }
