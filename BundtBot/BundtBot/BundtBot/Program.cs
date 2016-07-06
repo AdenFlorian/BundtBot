@@ -3,16 +3,19 @@ using Discord.Audio;
 using Discord.Commands;
 using NString;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using WrapYoutubeDl;
 
 namespace BundtBot.BundtBot {
     class Program {
-        SoundBoard _soundBoard;
+        SoundBoard _soundBoard = new SoundBoard();
         Random _random = new Random();
         DiscordClient _client;
+        SoundManager _soundManager = new SoundManager();
         string version = "0.0";
 
         const string BOT_TOKEN_PATH = "keys/BotToken.txt";
@@ -53,8 +56,6 @@ namespace BundtBot.BundtBot {
             _client = new DiscordClient(x => {
                 x.LogLevel = LogSeverity.Debug;
             });
-
-            _soundBoard = new SoundBoard(_client);
 
             WriteBundtBotASCIIArtToConsole();
             MyLogger.WriteLine("v" + version, ConsoleColor.Cyan);
@@ -158,22 +159,22 @@ namespace BundtBot.BundtBot {
             #endregion
 
             #region SoundBoard
+            // TODO Fix !stop
             commandService.CreateCommand("stop")
                 .Alias(new string[] { "shutup", "stfu", "👎", "🚫🎶", "🚫 🎶" })
                 .Description("Please don't stop the :notes:.")
                 .Do(async e => {
-                    var audioClient = e.Server.GetAudioClient();
-                    if (audioClient == null) {
-                        var msg = await e.Channel.SendMessage("stop what?");
-                        await msg.Edit(msg.Text + " I unlocked the soundboard for you, hope that helps :grimacing: ");
-                    } else {
-                        var msg = await e.Channel.SendMessage("okay...");
-                        audioClient.Clear();
-                        await audioClient.Disconnect();
-                        await msg.Edit(msg.Text + ":disappointed_relieved:");
-                    }
-                    _soundBoard.stop = true;
-                    _soundBoard.locked = false;
+                    var msg = await e.Channel.SendMessage("okay...");
+                    _soundManager.Stop();
+                    await msg.Edit(msg.Text + ":disappointed_relieved:");
+                });
+            commandService.CreateCommand("next")
+                .Alias(new string[] { "skip" })
+                .Description("Play the next sound.")
+                .Do(async e => {
+                    var msg = await e.Channel.SendMessage("sure thing boss...");
+                    _soundManager.Skip();
+                    await msg.Edit(msg.Text + "is this what you wanted?");
                 });
             commandService.CreateCommand("sb")
                 .AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
@@ -181,20 +182,48 @@ namespace BundtBot.BundtBot {
                 .Description("Sound board. It plays sounds with its mouth.")
                 .Parameter("sound args", ParameterType.Unparsed)
                 .Do(async e => {
-                    Sound soundBoardArgs = null;
-                    try {
-                        soundBoardArgs = new Sound(e.Message.Text);
-                    } catch (Exception ex) {
-                        await e.Channel.SendMessage("you're doing it wrong");
-                        await e.Channel.SendMessage(ex.Message);
-                    }
+                    // Command should have 3 words separated by spaces
+                    // 1. !owsb (or !sb)
+                    // 2. actor
+                    // 3. the sound name (can be multiple words)
+                    // So, if we split by spaces, we should have at least 3 parts
+                    var commandString = e.Message.Text.Trim();
+                    List<string> words = new List<string>(commandString.Split(' '));
 
-                    if (soundBoardArgs == null) {
+                    var actorAndSoundNames = SoundBoard.ParseActorAndSoundNames(words);
+
+                    var actorName = actorAndSoundNames.Item1;
+                    var soundName = actorAndSoundNames.Item2;
+
+                    if (words.Count > 3) {
+                        for (int i = 3; i < words.Count; i++) {
+                            soundName += " " + words[i];
+                        }
+                    }
+                    
+                    var soundPath = await _soundBoard.GetSoundPath(actorName, soundName, e.Channel);
+
+                    Sound sound = null;
+                    sound = new Sound(soundPath, e.Channel, e.User.VoiceChannel);
+                    
+                    if (sound == null) {
                         await e.Channel.SendMessage("you're doing it wrong (or something broke)");
                         return;
                     }
 
-                    await _soundBoard.Process(e, soundBoardArgs);
+                    try {
+                        // Filter out the arguments (words starting with '--')
+                        var args = SoundBoard.ExtractArgs(words);
+
+                        if (args.Count() > 0) {
+                            SoundBoard.ParseArgs(args, ref sound);
+                        }
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+
+                    _soundManager.EnqueueSound(sound);
                 });
             commandService.CreateCommand("youtube")
                 // TODO These checks seem to be broken
@@ -220,11 +249,6 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    if (_soundBoard.locked) {
-                        await e.Channel.SendMessage("wait your turn...or if you want to be mean, use !stop");
-                        return;
-                    }
-
                     var voiceChannel = e.User.VoiceChannel;
 
                     if (voiceChannel == null) {
@@ -236,11 +260,12 @@ namespace BundtBot.BundtBot {
 
                     // Get video id
                     MyLogger.WriteLine("Getting youtube video id...");
-                    var youtubeVideoID = new YoutubeVideoID().Get(ytSearchString);
+                    var youtubeVideoID = await new YoutubeVideoID().Get(ytSearchString);
                     MyLogger.WriteLine("Youtube video ID get! " + youtubeVideoID, ConsoleColor.Green);
 
+                    // Get video name
                     MyLogger.WriteLine("Getting youtube video title...");
-                    var youtubeVideoTitle = new YoutubeVideoName().Get(ytSearchString);
+                    var youtubeVideoTitle = await new YoutubeVideoName().Get(ytSearchString);
                     MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
                     await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
 
@@ -254,7 +279,7 @@ namespace BundtBot.BundtBot {
                     if (File.Exists(possiblePath) == false) {
                         string youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
-                        outputWAV = new FFMPEG().ffmpegConvert(youtubeOutput);
+                        outputWAV = await new FFMPEG().ffmpegConvert(youtubeOutput);
                         await msg.Edit(msg.Text + "finished! Sending data...");
                     } else {
                         MyLogger.WriteLine("WAV file exists already! " + possiblePath, ConsoleColor.Green);
@@ -262,21 +287,15 @@ namespace BundtBot.BundtBot {
                         await e.Channel.SendMessage("Playing audio from cache...");
                     }
 
-                    var args = new Sound();
-                    args.soundPath = outputWAV;
-                    args.deleteAfterPlay = false;
+                    var sound = new Sound(outputWAV, e.Channel, voiceChannel);
+                    sound.deleteAfterPlay = false;
 
-                    if (File.Exists(args.soundPath) == false) {
+                    if (File.Exists(sound.soundPath) == false) {
                         await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
                         return;
                     }
-                    _soundBoard.locked = true;
-
-                    MyLogger.WriteLine("Connecting to voice channel:" + voiceChannel.Name);
-                    MyLogger.WriteLine("\tOn server:  " + voiceChannel.Server.Name);
-                    var audioService = _client.GetService<AudioService>();
-                    var audioClient = await audioService.Join(voiceChannel);
-                    new AudioStreamer().PlaySound(audioService, audioClient, args);
+                    
+                    _soundManager.EnqueueSound(sound);
                 });
             #endregion
         }
@@ -360,6 +379,10 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
                     return;
                 }*/
+                if (_soundManager.isPlaying) {
+                    MyLogger.WriteLine("_soundManager.HasThingsInQueue() is true. Ignoring...");
+                    return;
+                }
                 MyLogger.WriteLine(e.User.Name + " joined voice channel: " + e.Channel);
                     var list = new[] {
                     Tuple.Create("reinhardt", "hello"),
@@ -372,7 +395,9 @@ namespace BundtBot.BundtBot {
                 var i = _random.Next(list.Count());
                 var x = list[i];
                 MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
-                await _soundBoard.Process(null, e.Channel, x.Item1, x.Item2);
+                var soundPath = await _soundBoard.GetSoundPath(x.Item1, x.Item2, e.Channel.Server.DefaultChannel);
+                var sound = new Sound(soundPath, e.Channel.Server.DefaultChannel, e.Channel);
+                _soundManager.EnqueueSound(sound, false);
             };
             _client.UserLeftVoiceChannel += (s, e) => {
                 MyLogger.WriteLine(e.User.Name + " left voice channel: " + e.Channel);

@@ -6,12 +6,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace BundtBot.BundtBot {
     class AudioStreamer {
+        public volatile bool stop = false;
+
         public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
             string soundFilePath = sound.soundPath;
             int ms = audioService.Config.BufferLength;
             int channels = audioService.Config.Channels;
             int sampleRate = 48000;
-            int waitTimeMS = 0;
+            int timePlayed = 0;
             var outFormat = new WaveFormat(sampleRate, 16, channels);
 
             // Just an extra check to keep the bot from blowing people's ears out
@@ -37,8 +39,8 @@ namespace BundtBot.BundtBot {
                 // Read audio into our buffer, and keep a loop open while data is present
                 while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
                     // Limit play length (--length)
-                    waitTimeMS += ms;
-                    if (sound.length_ms > 0 && waitTimeMS > sound.length_ms) {
+                    timePlayed += ms;
+                    if (sound.length_ms > 0 && timePlayed > sound.length_ms) {
                         break;
                     }
 
@@ -48,7 +50,7 @@ namespace BundtBot.BundtBot {
                             buffer[i] = 0;
                     }
 
-                    if (audioClient.State == ConnectionState.Disconnected) {
+                    if (audioClient.State == ConnectionState.Disconnected || stop) {
                         break;
                     }
 
@@ -60,6 +62,11 @@ namespace BundtBot.BundtBot {
                     }
                 }
                 MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Green);
+            }
+
+            if (stop) {
+                audioClient.Clear();
+                stop = false;
             }
 
             audioClient.Wait();

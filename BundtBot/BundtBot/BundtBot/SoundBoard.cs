@@ -2,99 +2,122 @@
 using Discord.Audio;
 using Discord.Commands;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace BundtBot.BundtBot {
     class SoundBoard {
-        public bool locked = false;
-        public bool stop = false;
-        
-        DiscordClient _client;
         Random _random = new Random();
 
         const string BASE_PATH = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
         const char SLASH = '\\';
 
-        public SoundBoard(DiscordClient client) {
-            _client = client;
-        }
-
-        public async Task Process(CommandEventArgs e, Sound sound) {
-            await Process(e.Channel, e.User.VoiceChannel, sound);
-        }
-
-        public async Task Process(Channel textChannel, Channel voiceChannel, string actorName, string soundName) {
-            var sound = new Sound {
-                actorName = actorName,
-                soundName = soundName
-            };
-            await Process(textChannel, voiceChannel, sound);
-        }
-
         /// <summary>
-        /// Processes the sound board args,
-        /// plays the sound to the voice channel,
-        /// and sends updates via the text channel
+        /// Gets the path to a sound file by actor and sound names.
         /// </summary>
-        public async Task Process(Channel textChannel, Channel voiceChannel, Sound sound) {
-            if (textChannel == null) {
-                textChannel = voiceChannel.Server.DefaultChannel;
-                if (textChannel == null) {
-                    Console.WriteLine("somebody broke me :(");
-                    return;
-                }
-            }
-
-            if (voiceChannel == null) {
-                await textChannel.SendMessage("you need to be in a voice channel to hear me roar");
-                return;
-            }
-
-            if (locked) {
-                await textChannel.SendMessage("wait your turn...or if you want to be mean, use !stop");
-                return;
-            }
-
-            locked = true;
+        public async Task<string> GetSoundPath(string actorName, string soundName, Channel textChannel) {
 
             string soundFilePath = null;
 
-            if (CheckActorName(ref sound.actorName, textChannel) == false) {
+            if (CheckActorName(ref actorName, textChannel) == false) {
                 await textChannel.SendMessage("these are not the sounds you're looking for...");
             }
 
-            if (CheckSoundName(ref sound.soundName, sound.actorName, textChannel) == false) {
+            if (CheckSoundName(ref soundName, actorName, textChannel) == false) {
                 await textChannel.SendMessage("these are not the sounds you're looking for...");
             }
 
-            soundFilePath = BASE_PATH + sound.actorName + SLASH + sound.soundName + ".mp3";
+            soundFilePath = BASE_PATH + actorName + SLASH + soundName + ".mp3";
 
             Console.Write("looking for " + soundFilePath + "\t");
 
             if (!File.Exists(soundFilePath)) {
                 MyLogger.WriteLine("didn't find it...", ConsoleColor.Red);
                 await textChannel.SendMessage("these are not the sounds you're looking for...");
-                locked = false;
-                return;
+                return null;
             }
 
             MyLogger.WriteLine("Found it!", ConsoleColor.Green);
-            sound.soundPath = soundFilePath;
 
-            MyLogger.WriteLine("Connecting to voice channel:" + voiceChannel.Name);
-            MyLogger.WriteLine("\tOn server:  " + voiceChannel.Server.Name);
-            var audioService = _client.GetService<AudioService>();
-            var audioClient = await audioService.Join(voiceChannel);
-            new AudioStreamer().PlaySound(audioService, audioClient, sound);
-            await audioClient.Disconnect();
-            locked = false;
-
-            if (sound.deleteAfterPlay) {
-                MyLogger.WriteLine("Deleting sound file: " + sound.soundPath, ConsoleColor.Yellow);
-                File.Delete(soundFilePath);
+            return soundFilePath;
+        }
+        
+        public static void ParseArgs(IEnumerable<string> args, ref Sound sound) {
+            foreach (string arg in args) {
+                if (arg.StartsWith("--length:") &&
+                    arg.Length > 9) {
+                    try {
+                        sound.length_seconds = float.Parse(arg.Substring(9));
+                    } catch (Exception) {
+                        throw new ArgumentException("badly formed length value");
+                    }
+                    if (sound.length_seconds <= 0) {
+                        throw new ArgumentException("invalid length value, must be a positive foat");
+                    }
+                    MyLogger.WriteLine("Parsed " + arg + " into " + sound.length_seconds + " seconds");
+                } else if (arg.StartsWith("--volume:") &&
+                    arg.Length > 9) {
+                    try {
+                        var intVolume = int.Parse(arg.Substring(9));
+                        if (intVolume < 1 || intVolume > 11) {
+                            throw new ArgumentException("invalid volume, must be an integer from 1 to 10");
+                        }
+                        sound.volume = (float)intVolume / 10f;
+                        MyLogger.WriteLine("Parsed " + arg + " into " + sound.volume);
+                    } catch (Exception) {
+                        throw new ArgumentException("badly formed volume value");
+                    }
+                } else if (arg.StartsWith("--echo")) {
+                    sound.echo = true;
+                    if (arg == "--echo") {
+                        MyLogger.WriteLine("Parsed " + arg);
+                    } else {
+                        var parts = arg.Split(':');
+                        if (parts.Count() > 1) {
+                            sound.echoLength = (int)(float.Parse(parts[1]) * 1000);
+                            if (sound.echoLength <= 0 || sound.echoLength > 50000) {
+                                throw new ArgumentException("bad echo length");
+                            }
+                            if (parts.Count() > 2) {
+                                sound.echoFactor = (float)int.Parse(parts[2]) / 10;
+                                if (sound.echoFactor <= 0 || sound.echoFactor > 1f) {
+                                    throw new ArgumentException("bad echo factor");
+                                }
+                            }
+                        }
+                    }
+                } else if (arg.StartsWith("--reverb")) {
+                    sound.reverb = true;
+                    MyLogger.WriteLine("Parsed " + arg);
+                } else {
+                    throw new ArgumentException("argument not found");
+                }
             }
+        }
+
+        public static Tuple<string, string> ParseActorAndSoundNames(List<string> words) {
+            if (words.Count == 1 &&
+                words[0] == "!sb") {
+                words.Add("#random");
+                words.Add("#random");
+            }
+
+            if (words.Count == 2) {
+                words.Add("#random");
+            }
+
+            return Tuple.Create(words[1], words[2]);
+        }
+        
+        public static List<string> ExtractArgs(List<string> words) {
+            words.Reverse();
+            var args = words.TakeWhile(x => x.StartsWith("--")).ToList();
+            words.RemoveRange(0, args.Count());
+            words.Reverse();
+            words = words.TakeWhile(x => !x.StartsWith("--")).ToList();
+            return args;
         }
 
         /// <summary>Returns true if it found a match</summary>
