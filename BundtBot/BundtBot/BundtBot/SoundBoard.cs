@@ -17,31 +17,30 @@ namespace BundtBot.BundtBot {
         /// <summary>
         /// Gets the path to a sound file by actor and sound names.
         /// </summary>
-        public async Task<string> GetSoundPath(string actorName, string soundName, Channel textChannel) {
+        public bool TryGetSoundPath(string actorName, string soundName, out FileInfo soundFile) {
 
-            string soundFilePath = null;
+            soundFile = null;
 
-            if (CheckActorName(ref actorName, textChannel) == false) {
-                await textChannel.SendMessage("these are not the sounds you're looking for...");
+            if (CheckActorName(ref actorName) == false) {
+                return false;
             }
 
-            if (CheckSoundName(ref soundName, actorName, textChannel) == false) {
-                await textChannel.SendMessage("these are not the sounds you're looking for...");
+            if (CheckSoundName(ref soundName, actorName) == false) {
+                return false;
             }
 
-            soundFilePath = BASE_PATH + actorName + SLASH + soundName + ".mp3";
+            soundFile = new FileInfo(BASE_PATH + actorName + SLASH + soundName + ".mp3");
 
-            Console.Write("looking for " + soundFilePath + "\t");
+            Console.Write("looking for " + soundFile.FullName + "\t");
 
-            if (!File.Exists(soundFilePath)) {
+            if (soundFile.Exists == false) {
                 MyLogger.WriteLine("didn't find it...", ConsoleColor.Red);
-                await textChannel.SendMessage("these are not the sounds you're looking for...");
-                return null;
+                soundFile = null;
+                return false;
             }
 
             MyLogger.WriteLine("Found it!", ConsoleColor.Green);
-
-            return soundFilePath;
+            return true;
         }
         
         public static void ParseArgs(IEnumerable<string> args, ref Sound sound) {
@@ -121,7 +120,7 @@ namespace BundtBot.BundtBot {
         }
 
         /// <summary>Returns true if it found a match</summary>
-        bool CheckActorName(ref string actorName, Channel textChannel) {
+        bool CheckActorName(ref string actorName) {
             var actorDirectories = Directory.GetDirectories(BASE_PATH);
 
             if (actorDirectories.Length < 1) {
@@ -160,7 +159,7 @@ namespace BundtBot.BundtBot {
             }
 
             if (bestScore > 0) {
-                textChannel.SendMessage("i think you meant " + matchedCategory);
+                //textChannel.SendMessage("i think you meant " + matchedCategory);
             }
 
             actorName = matchedCategory;
@@ -168,7 +167,7 @@ namespace BundtBot.BundtBot {
         }
 
         /// <summary>Returns true if it found a match</summary>
-        bool CheckSoundName(ref string soundName, string actorName, Channel textChannel) {
+        bool CheckSoundName(ref string soundName, string actorName) {
             var soundNames = Directory.GetFiles(BASE_PATH + actorName);
 
             if (soundNames.Length < 1) {
@@ -215,7 +214,7 @@ namespace BundtBot.BundtBot {
             }
 
             if (bestScore > 0) {
-                textChannel.SendMessage("i think you meant " + matchedSound);
+                //textChannel.SendMessage("i think you meant " + matchedSound);
             }
 
             soundName = matchedSound;

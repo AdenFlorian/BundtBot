@@ -9,8 +9,6 @@ namespace BundtBot.BundtBot {
         public volatile bool stop = false;
 
         public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
-            string soundFilePath = sound.soundPath;
-            int ms = audioService.Config.BufferLength;
             int channels = audioService.Config.Channels;
             int sampleRate = 48000;
             int timePlayed = 0;
@@ -23,7 +21,7 @@ namespace BundtBot.BundtBot {
                 sound.volume = 1;
             }
 
-            using (var audioFileStream = new MediaFoundationReader(soundFilePath))
+            using (var audioFileStream = new MediaFoundationReader(sound.soundFile.FullName))
             using (var waveChannel32 = new WaveChannel32(audioFileStream, sound.volume * 0.25f, 0f) { PadWithZeroes = false })
             using (var effectStream = new EffectStream(waveChannel32))
             using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))
@@ -39,7 +37,7 @@ namespace BundtBot.BundtBot {
                 // Read audio into our buffer, and keep a loop open while data is present
                 while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
                     // Limit play length (--length)
-                    timePlayed += ms;
+                    timePlayed += (byteCount * 1000) / outFormat.AverageBytesPerSecond;
                     if (sound.length_ms > 0 && timePlayed > sound.length_ms) {
                         break;
                     }

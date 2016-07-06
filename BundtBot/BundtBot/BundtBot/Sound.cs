@@ -1,6 +1,7 @@
 ﻿using Discord;
 using System;
 using System.Diagnostics.Contracts;
+using System.IO;
 
 namespace BundtBot.BundtBot {
     /// <summary>
@@ -9,7 +10,7 @@ namespace BundtBot.BundtBot {
     class Sound {
         #region Required
         /// <summary>The absolute path to the sound file on the local file system.</summary>
-        public string soundPath { get; private set; }
+        public FileInfo soundFile { get; private set; }
         /// <summary>The text channel to send messages to.</summary>
         public Channel textChannel { get; private set; }
         /// <summary>The voice channel to play the sound in.</summary>
@@ -32,13 +33,14 @@ namespace BundtBot.BundtBot {
             get { return (int)(length_seconds * 1000); }
         }
 
-        public Sound(string soundPath, Channel textChannel, Channel voiceChannel) {
-            Contract.Requires<ArgumentNullException>(soundPath != null);
+        public Sound(FileInfo soundFile, Channel textChannel, Channel voiceChannel) {
+            Contract.Requires<ArgumentNullException>(soundFile != null);
+            Contract.Requires<FileNotFoundException>(soundFile.Exists);
             Contract.Requires<ArgumentNullException>(textChannel != null);
+            Contract.Requires<ArgumentException>(textChannel.Type == ChannelType.Text);
             Contract.Requires<ArgumentNullException>(voiceChannel != null);
-            Contract.Requires<ArgumentException>(textChannel.Type.Equals(ChannelType.Text));
-            Contract.Requires<ArgumentException>(voiceChannel.Type.Equals(ChannelType.Voice));
-            this.soundPath = soundPath;
+            Contract.Requires<ArgumentException>(voiceChannel.Type == ChannelType.Voice);
+            this.soundFile = soundFile;
             this.textChannel = textChannel;
             this.voiceChannel = voiceChannel;
         }

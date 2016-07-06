@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace BundtBot.BundtBot {
     class FFMPEG {
-        public async Task<string> ffmpegConvert(string outputPath) {
+        public async Task<FileInfo> ffmpegConvert(string outputPath) {
             var outputWAV = outputPath.Substring(0, outputPath.LastIndexOf('.')) + ".wav";
 
             var ffmpegProcess = new Process();
@@ -31,7 +31,7 @@ namespace BundtBot.BundtBot {
             await Task.Run(() => { ffmpegProcess.WaitForExit(); });
 
             File.Delete(outputPath);
-            return outputWAV;
+            return new FileInfo(outputWAV);
         }
     }
 }

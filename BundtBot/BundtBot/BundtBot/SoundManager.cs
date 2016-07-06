@@ -37,8 +37,8 @@ namespace BundtBot.BundtBot {
                     _audioStreamer.PlaySound(audioService, audioClient, sound);
 
                     if (sound.deleteAfterPlay) {
-                        MyLogger.WriteLine("Deleting sound file: " + sound.soundPath, ConsoleColor.Yellow);
-                        File.Delete(sound.soundPath);
+                        MyLogger.WriteLine("Deleting sound file: " + sound.soundFile, ConsoleColor.Yellow);
+                        sound.soundFile.Delete();
                     }
 
                     // Check if next sound is in same channel

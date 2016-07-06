@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using WrapYoutubeDl;
 
@@ -156,6 +157,20 @@ namespace BundtBot.BundtBot {
                     await e.Channel.SendMessage("Click this link to invite me to your server: "
                         + Constants.INVITE_LINK);
                 });
+            commandService.CreateCommand("bot")
+                .Description("Why wasn't I invited?.")
+                .Do(async e => {
+                    Thread.Sleep(1000);
+                    var msg = await e.Channel.SendMessage("bundtbot");
+                    Thread.Sleep(2000);
+                    await msg.Edit(msg.Text + " is");
+                    Thread.Sleep(3000);
+                    var msg2 = await e.Channel.SendMessage(":back:");
+                    Thread.Sleep(333);
+                    await msg2.Edit(msg2.Text + ":on:");
+                    Thread.Sleep(333);
+                    await msg2.Edit(msg2.Text + ":on:" + ":top:");
+                });
             #endregion
 
             #region SoundBoard
@@ -172,9 +187,19 @@ namespace BundtBot.BundtBot {
                 .Alias(new string[] { "skip" })
                 .Description("Play the next sound.")
                 .Do(async e => {
-                    var msg = await e.Channel.SendMessage("sure thing boss...");
-                    _soundManager.Skip();
-                    await msg.Edit(msg.Text + "is this what you wanted?");
+                    if (_soundManager.isPlaying == false) {
+                        await e.Channel.SendMessage("there's nothing to skip");
+                        return;
+                    }
+                    if (_soundManager.HasThingsInQueue == false) {
+                        var msg = await e.Channel.SendMessage("end of line");
+                        _soundManager.Skip();
+                        await msg.Edit(msg.Text + " :stop_button:");
+                    } else {
+                        var msg = await e.Channel.SendMessage("sure thing boss...");
+                        _soundManager.Skip();
+                        await msg.Edit(msg.Text + "is this what you wanted?");
+                    }
                 });
             commandService.CreateCommand("sb")
                 .AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
@@ -190,6 +215,15 @@ namespace BundtBot.BundtBot {
                     var commandString = e.Message.Text.Trim();
                     List<string> words = new List<string>(commandString.Split(' '));
 
+                    List<string> args;
+                    try {
+                        // Filter out the arguments (words starting with '--')
+                        args = SoundBoard.ExtractArgs(words);
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+
                     var actorAndSoundNames = SoundBoard.ParseActorAndSoundNames(words);
 
                     var actorName = actorAndSoundNames.Item1;
@@ -200,11 +234,16 @@ namespace BundtBot.BundtBot {
                             soundName += " " + words[i];
                         }
                     }
+
+                    FileInfo soundFile;
                     
-                    var soundPath = await _soundBoard.GetSoundPath(actorName, soundName, e.Channel);
+                    if (_soundBoard.TryGetSoundPath(actorName, soundName, out soundFile) == false) {
+                        await e.Channel.SendMessage("these are not the sounds you're looking for...");
+                        return;
+                    }
 
                     Sound sound = null;
-                    sound = new Sound(soundPath, e.Channel, e.User.VoiceChannel);
+                    sound = new Sound(soundFile, e.Channel, e.User.VoiceChannel);
                     
                     if (sound == null) {
                         await e.Channel.SendMessage("you're doing it wrong (or something broke)");
@@ -212,9 +251,6 @@ namespace BundtBot.BundtBot {
                     }
 
                     try {
-                        // Filter out the arguments (words starting with '--')
-                        var args = SoundBoard.ExtractArgs(words);
-
                         if (args.Count() > 0) {
                             SoundBoard.ParseArgs(args, ref sound);
                         }
@@ -272,28 +308,28 @@ namespace BundtBot.BundtBot {
                     var mp3OutputFolder = "c:/@mp3/";
 
                     // See if file exists
-                    var possiblePath = mp3OutputFolder + youtubeVideoID + ".wav";
+                    var possibleSoundFile = new FileInfo(mp3OutputFolder + youtubeVideoID + ".wav");
 
-                    string outputWAV;
+                    FileInfo outputWAVFile;
 
-                    if (File.Exists(possiblePath) == false) {
+                    if (possibleSoundFile.Exists == false) {
                         string youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
-                        outputWAV = await new FFMPEG().ffmpegConvert(youtubeOutput);
+                        outputWAVFile = await new FFMPEG().ffmpegConvert(youtubeOutput);
                         await msg.Edit(msg.Text + "finished! Sending data...");
                     } else {
-                        MyLogger.WriteLine("WAV file exists already! " + possiblePath, ConsoleColor.Green);
-                        outputWAV = possiblePath;
+                        MyLogger.WriteLine("WAV file exists already! " + possibleSoundFile.FullName, ConsoleColor.Green);
+                        outputWAVFile = possibleSoundFile;
                         await e.Channel.SendMessage("Playing audio from cache...");
                     }
 
-                    var sound = new Sound(outputWAV, e.Channel, voiceChannel);
-                    sound.deleteAfterPlay = false;
-
-                    if (File.Exists(sound.soundPath) == false) {
+                    if (outputWAVFile.Exists == false) {
                         await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
                         return;
                     }
+
+                    var sound = new Sound(outputWAVFile, e.Channel, voiceChannel);
+                    sound.deleteAfterPlay = false;
                     
                     _soundManager.EnqueueSound(sound);
                 });
@@ -369,7 +405,7 @@ namespace BundtBot.BundtBot {
             };
             _client.UserUpdated += (s, e) => {
             };
-            _client.UserJoinedVoiceChannel += async (s, e) => {
+            _client.UserJoinedVoiceChannel += (s, e) => {
                 if (e.User.IsBot) {
                     MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
                     return;
@@ -384,7 +420,7 @@ namespace BundtBot.BundtBot {
                     return;
                 }
                 MyLogger.WriteLine(e.User.Name + " joined voice channel: " + e.Channel);
-                    var list = new[] {
+                var list = new[] {
                     Tuple.Create("reinhardt", "hello"),
                     Tuple.Create("genji", "hello"),
                     Tuple.Create("mercy", "hello"),
@@ -395,8 +431,12 @@ namespace BundtBot.BundtBot {
                 var i = _random.Next(list.Count());
                 var x = list[i];
                 MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
-                var soundPath = await _soundBoard.GetSoundPath(x.Item1, x.Item2, e.Channel.Server.DefaultChannel);
-                var sound = new Sound(soundPath, e.Channel.Server.DefaultChannel, e.Channel);
+                FileInfo soundFile;
+                if (_soundBoard.TryGetSoundPath(x.Item1, x.Item2, out soundFile) == false) {
+                    MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
+                    return;
+                }
+                var sound = new Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel);
                 _soundManager.EnqueueSound(sound, false);
             };
             _client.UserLeftVoiceChannel += (s, e) => {
