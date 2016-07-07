@@ -1,48 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using NAudio.Wave;
 
 namespace BundtBot.BundtBot {
     public class EffectStream : WaveStream {
         public WaveStream SourceStream { get; set; }
 
-        public List<IEffect> Effects { get; private set; }
+        public List<IEffect> Effects { get; } = new List<IEffect>();
 
-        public EffectStream(WaveStream stream) {
-            this.SourceStream = stream;
-            this.Effects = new List<IEffect>();
+        public EffectStream(WaveStream sourceStream) {
+            SourceStream = sourceStream;
         }
 
-        public override long Length {
-            get { return SourceStream.Length; }
-        }
+        public override long Length => SourceStream.Length;
 
         public override long Position {
             get { return SourceStream.Position; }
             set { SourceStream.Position = value; }
         }
 
-        public override WaveFormat WaveFormat {
-            get { return SourceStream.WaveFormat; }
-        }
+        public override WaveFormat WaveFormat => SourceStream.WaveFormat;
 
-        int channel = 0;
+        int _channel;
 
         public override int Read(byte[] buffer, int offset, int count) {
-            int read = SourceStream.Read(buffer, offset, count);
+            var read = SourceStream.Read(buffer, offset, count);
 
-            for (int i = 0; i < read / 4; i++) {
-                float sample = BitConverter.ToSingle(buffer, i * 4);
+            for (var i = 0; i < read / 4; i++) {
+                var sample = BitConverter.ToSingle(buffer, i * 4);
 
                 if (Effects.Count == WaveFormat.Channels) {
-                    sample = Effects[channel].ApplyEffect(sample);
-                    channel = (channel + 1) % WaveFormat.Channels;
+                    sample = Effects[_channel].ApplyEffect(sample);
+                    _channel = (_channel + 1) % WaveFormat.Channels;
                 }
 
-                byte[] bytes = BitConverter.GetBytes(sample);
+                var bytes = BitConverter.GetBytes(sample);
                 //bytes.CopyTo(buffer, i * 4);
                 buffer[i * 4 + 0] = bytes[0];
                 buffer[i * 4 + 1] = bytes[1];

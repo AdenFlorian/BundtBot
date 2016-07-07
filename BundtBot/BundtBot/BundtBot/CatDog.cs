@@ -1,18 +1,18 @@
-﻿using Discord.Commands;
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Discord.Commands;
 
 namespace BundtBot.BundtBot {
     public static class CatDog {
         public static async Task Cat(CommandEventArgs e) {
-            Random rand = new Random();
+            var rand = new Random();
             if (rand.NextDouble() >= 0.5) {
                 using (var webclient = new HttpClient()) {
                     var s = await webclient.GetStringAsync("http://random.cat/meow");
-                    int pFrom = s.IndexOf("\\/i\\/") + "\\/i\\/".Length;
-                    int pTo = s.LastIndexOf("\"}");
-                    string cat = s.Substring(pFrom, pTo - pFrom);
+                    var pFrom = s.IndexOf("\\/i\\/", StringComparison.Ordinal) + "\\/i\\/".Length;
+                    var pTo = s.LastIndexOf("\"}", StringComparison.Ordinal);
+                    var cat = s.Substring(pFrom, pTo - pFrom);
                     Console.WriteLine("http://random.cat/i/" + cat);
                     await e.Channel.SendMessage("I found a cat\nhttp://random.cat/i/" + cat);
                 }
@@ -24,8 +24,9 @@ namespace BundtBot.BundtBot {
         public static async Task Dog(CommandEventArgs e, string message) {
             try {
                 using (var client = new HttpClient()) {
+                    client.Timeout = new TimeSpan(2000);
                     client.BaseAddress = new Uri("http://random.dog");
-                    string dog = await client.GetStringAsync("woof");
+                    var dog = await client.GetStringAsync("woof");
                     Console.WriteLine("http://random.dog/" + dog);
                     await e.Channel.SendMessage(message + "\nhttp://random.dog/" + dog);
                 }

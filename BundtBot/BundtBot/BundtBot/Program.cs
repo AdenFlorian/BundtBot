@@ -1,27 +1,26 @@
-﻿using Discord;
-using Discord.Audio;
-using Discord.Commands;
-using NString;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using Discord;
+using Discord.Audio;
+using Discord.Commands;
+using NString;
 using WrapYoutubeDl;
 
 namespace BundtBot.BundtBot {
     class Program {
-        SoundBoard _soundBoard = new SoundBoard();
-        Random _random = new Random();
+        readonly SoundBoard _soundBoard = new SoundBoard();
+        readonly Random _random = new Random();
+        readonly SoundManager _soundManager = new SoundManager();
         DiscordClient _client;
-        SoundManager _soundManager = new SoundManager();
-        string version = "0.0";
+        string _version = "0.0";
 
-        const string BOT_TOKEN_PATH = "keys/BotToken.txt";
+        const string BotTokenPath = "keys/BotToken.txt";
 
-        static void Main(string[] args) {
+        static void Main() {
             new Program().Start();
         }
 
@@ -30,7 +29,7 @@ namespace BundtBot.BundtBot {
             Console.OutputEncoding = Encoding.UTF8;
 
             // Load Bot Token
-            string botToken = null;
+            string botToken;
 
             try {
                 botToken = LoadBotToken();
@@ -39,19 +38,18 @@ namespace BundtBot.BundtBot {
                 MyLogger.WriteExitMessageAndReadKey();
                 return;
             }
-
-            // Do version
-            var versionPath = "version.txt";
+            
+            const string versionPath = "version.txt";
             if (File.Exists(versionPath)) {
                 var versionFloat = float.Parse(File.ReadAllText(versionPath));
                 versionFloat += 0.01f;
-                version = versionFloat.ToString("0.00");
+                _version = versionFloat.ToString("0.00");
             }
-            File.WriteAllText(versionPath, version);
+            File.WriteAllText(versionPath, _version);
 
-            var otherVersionPath = "../../version.txt";
+            const string otherVersionPath = "../../version.txt";
             if (File.Exists(otherVersionPath)) {
-                File.WriteAllText(otherVersionPath, version);
+                File.WriteAllText(otherVersionPath, _version);
             }
 
             _client = new DiscordClient(x => {
@@ -59,7 +57,7 @@ namespace BundtBot.BundtBot {
             });
 
             WriteBundtBotASCIIArtToConsole();
-            MyLogger.WriteLine("v" + version, ConsoleColor.Cyan);
+            MyLogger.WriteLine("v" + _version, ConsoleColor.Cyan);
             MyLogger.NewLine();
 
             _client.UsingAudio(x => {
@@ -78,9 +76,6 @@ namespace BundtBot.BundtBot {
             _client.ExecuteAndWait(async () => {
                 await _client.Connect(botToken);
             });
-
-            _client.Disconnect();
-            _client.Dispose();
         }
 
         void SetupCommands() {
@@ -101,7 +96,7 @@ namespace BundtBot.BundtBot {
 
             #region boring commands
             commandService.CreateCommand("credits")
-                .Alias(new string[] { "github" })
+                .Alias("github")
                 .Description("Prints who made this thing.")
                 .Do(async e => {
                     await e.Channel.SendMessage("!owsb <character name> <phrase>"
@@ -111,19 +106,19 @@ namespace BundtBot.BundtBot {
                         + "\nhttps://trello.com/b/VKqUgzwV/bundtbot#");
                 });
             commandService.CreateCommand("cat")
-                .Alias(new string[] { "kitty", "feline", "Felis_catus", "kitten", "🐱", "🐈" })
+                .Alias("kitty", "feline", "Felis_catus", "kitten", "🐱", "🐈")
                 .Description("It's a secret.")
                 .Do(async e => {
                     await CatDog.Cat(e);
                 });
             commandService.CreateCommand("dog")
-                .Alias(new string[] { "doggy", "puppy", "Canis_lupus_familiaris", "🐶", "🐕" })
+                .Alias("doggy", "puppy", "Canis_lupus_familiaris", "🐶", "🐕")
                 .Description("The superior alternaitve to !cat.")
                 .Do(async e => {
                     await CatDog.Dog(e, "i found a dog");
                 });
             commandService.CreateCommand("admin")
-                .Alias(new string[] { "administrator" })
+                .Alias("administrator")
                 .Description("Find out whose house you're in.")
                 .Do(async e => {
                     string msg;
@@ -139,7 +134,7 @@ namespace BundtBot.BundtBot {
                     await e.Channel.SendMessage(msg);
                 });
             commandService.CreateCommand("mod")
-                .Alias(new string[] { "moderator" })
+                .Alias("moderator")
                 .Description("Find out if you are a mod.")
                 .Do(async e => {
                     if (e.User.Roles.Any(x => x.Name.Equals("mod"))) {
@@ -149,7 +144,7 @@ namespace BundtBot.BundtBot {
                     }
                 });
             commandService.CreateCommand("me")
-                .Alias(new string[] { "mystatus" })
+                .Alias("mystatus")
                 .Description("Find out you status in life.")
                 .Do(async e => {
                     await e.Channel.SendMessage("Voice channel: " + e.User.VoiceChannel?.Name);
@@ -158,7 +153,7 @@ namespace BundtBot.BundtBot {
                 .Description("Why wasn't I invited?.")
                 .Do(async e => {
                     await e.Channel.SendMessage("Click this link to invite me to your server: "
-                        + Constants.INVITE_LINK);
+                        + Constants.InviteLink);
                 });
             commandService.CreateCommand("bot")
                 .Description("Why wasn't I invited?.")
@@ -179,7 +174,7 @@ namespace BundtBot.BundtBot {
             #region SoundBoard
             // TODO Fix !stop
             commandService.CreateCommand("stop")
-                .Alias(new string[] { "shutup", "stfu", "👎", "🚫🎶", "🚫 🎶" })
+                .Alias("shutup", "stfu", "👎", "🚫🎶", "🚫 🎶")
                 .Description("Please don't stop the :notes:.")
                 .Do(async e => {
                     var msg = await e.Channel.SendMessage("okay...");
@@ -187,10 +182,10 @@ namespace BundtBot.BundtBot {
                     await msg.Edit(msg.Text + ":disappointed_relieved:");
                 });
             commandService.CreateCommand("next")
-                .Alias(new string[] { "skip" })
+                .Alias("skip")
                 .Description("Play the next sound.")
                 .Do(async e => {
-                    if (_soundManager.isPlaying == false) {
+                    if (_soundManager.IsPlaying == false) {
                         await e.Channel.SendMessage("there's nothing to skip");
                         return;
                     }
@@ -205,8 +200,8 @@ namespace BundtBot.BundtBot {
                     }
                 });
             commandService.CreateCommand("sb")
-                .AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
-                .Alias(new string[] { "owsb" })
+                .AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NotInVoice)
+                .Alias("owsb")
                 .Description("Sound board. It plays sounds with its mouth.")
                 .Parameter("sound args", ParameterType.Unparsed)
                 .Do(async e => {
@@ -216,12 +211,12 @@ namespace BundtBot.BundtBot {
                     // 3. the sound name (can be multiple words)
                     // So, if we split by spaces, we should have at least 3 parts
                     var commandString = e.Message.Text.Trim();
-                    List<string> words = new List<string>(commandString.Split(' '));
+                    var words = new List<string>(commandString.Split(' '));
 
                     List<string> args;
                     try {
                         // Filter out the arguments (words starting with '--')
-                        args = SoundBoard.ExtractArgs(words);
+                        args = SoundBoard.ExtractArgs(ref words);
                     } catch (Exception ex) {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
@@ -233,7 +228,7 @@ namespace BundtBot.BundtBot {
                     var soundName = actorAndSoundNames.Item2;
 
                     if (words.Count > 3) {
-                        for (int i = 3; i < words.Count; i++) {
+                        for (var i = 3; i < words.Count; i++) {
                             soundName += " " + words[i];
                         }
                     }
@@ -245,16 +240,10 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    Sound sound = null;
-                    sound = new Sound(soundFile, e.Channel, e.User.VoiceChannel);
-                    
-                    if (sound == null) {
-                        await e.Channel.SendMessage("you're doing it wrong (or something broke)");
-                        return;
-                    }
+                    var sound = new Sound(soundFile, e.Channel, e.User.VoiceChannel);
 
                     try {
-                        if (args.Count() > 0) {
+                        if (args.Count > 0) {
                             SoundBoard.ParseArgs(args, ref sound);
                         }
                     } catch (Exception ex) {
@@ -268,12 +257,12 @@ namespace BundtBot.BundtBot {
                 // TODO These checks seem to be broken
                 //.AddCheck((c, u, x) => _soundBoard.locked == false, Constants.SOUNDBOARD_LOCKED)
                 //.AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
-                .Alias(new string[] { "yt" })
+                .Alias("yt")
                 .Description("It's a tube for you!")
                 .Parameter("search string", ParameterType.Unparsed)
                 .Do(async e => {
                     // First validate the command is correct
-                    var ytSearchString = "";
+                    string ytSearchString;
 
                     var commandString = e.Message.Text.Trim();
 
@@ -316,9 +305,9 @@ namespace BundtBot.BundtBot {
                     FileInfo outputWAVFile;
 
                     if (possibleSoundFile.Exists == false) {
-                        string youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
+                        var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
-                        outputWAVFile = await new FFMPEG().ffmpegConvert(youtubeOutput);
+                        outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
                         await msg.Edit(msg.Text + "finished! Sending data...");
                     } else {
                         MyLogger.WriteLine("WAV file exists already! " + possibleSoundFile.FullName, ConsoleColor.Green);
@@ -331,9 +320,10 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var sound = new Sound(outputWAVFile, e.Channel, voiceChannel);
-                    sound.deleteAfterPlay = false;
-                    
+                    var sound = new Sound(outputWAVFile, e.Channel, voiceChannel) {
+                        DeleteAfterPlay = false
+                    };
+
                     _soundManager.EnqueueSound(sound);
                 });
             #endregion
@@ -341,14 +331,14 @@ namespace BundtBot.BundtBot {
 
         void WriteBundtBotASCIIArtToConsole() {
             MyLogger.NewLine();
-            MyLogger.WriteLine(Constants.BUNDTBOT_ASCII_ART, ConsoleColor.Red);
+            MyLogger.WriteLine(Constants.BundtbotASCIIArt, ConsoleColor.Red);
             MyLogger.NewLine();
         }
 
         string LoadBotToken() {
-            string token = File.ReadLines(BOT_TOKEN_PATH).First();
+            var token = File.ReadLines(BotTokenPath).First();
             if (token.IsNullOrEmpty()) {
-                throw new Exception("Bot token was empty or null after reading it from " + BOT_TOKEN_PATH);
+                throw new Exception("Bot token was empty or null after reading it from " + BotTokenPath);
             }
             return token;
         }
@@ -390,7 +380,7 @@ namespace BundtBot.BundtBot {
             _client.ServerAvailable += async (sender, e) => {
                 MyLogger.Write("Server available! ");
                 MyLogger.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
-                await e.Server.CurrentUser.Edit(nickname: "bundtbot v" + version);
+                await e.Server.CurrentUser.Edit(nickname: "bundtbot v" + _version);
             };
             _client.JoinedServer += (sender, e) => {
                 MyLogger.WriteLine("Joined Server! " + e.Server.Name);
@@ -418,7 +408,7 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
                     return;
                 }*/
-                if (_soundManager.isPlaying) {
+                if (_soundManager.IsPlaying) {
                     MyLogger.WriteLine("_soundManager.HasThingsInQueue() is true. Ignoring...");
                     return;
                 }
@@ -431,7 +421,7 @@ namespace BundtBot.BundtBot {
                     Tuple.Create("winston", "hi there"),
                     Tuple.Create("suhdude", "#random")
                 };
-                var i = _random.Next(list.Count());
+                var i = _random.Next(list.Length);
                 var x = list[i];
                 MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
                 FileInfo soundFile;

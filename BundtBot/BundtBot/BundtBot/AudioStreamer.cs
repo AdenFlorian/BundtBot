@@ -1,28 +1,27 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Audio;
 using NAudio.Wave;
-using System;
-using System.Diagnostics.CodeAnalysis;
 
 namespace BundtBot.BundtBot {
-    class AudioStreamer {
-        public volatile bool stop = false;
+    internal class AudioStreamer {
+        public volatile bool Stop;
 
         public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
-            int channels = audioService.Config.Channels;
-            int sampleRate = 48000;
-            int timePlayed = 0;
-            var outFormat = new WaveFormat(sampleRate, 16, channels);
+            var channels = audioService.Config.Channels;
+            var timePlayed = 0;
+            var outFormat = new WaveFormat(48000, 16, channels);
 
             // Just an extra check to keep the bot from blowing people's ears out
-            if (sound.volume > 1.1f) {
+            if (sound.Volume > 1.1f) {
                 throw new ArgumentException("Volume should never be greater than 1!");
-            } else if (sound.volume == 0) {
-                sound.volume = 1;
+            }
+            if (sound.Volume <= 0f) {
+                sound.Volume = 1;
             }
 
-            using (var audioFileStream = new MediaFoundationReader(sound.soundFile.FullName))
-            using (var waveChannel32 = new WaveChannel32(audioFileStream, sound.volume * 0.25f, 0f) { PadWithZeroes = false })
+            using (var audioFileStream = new MediaFoundationReader(sound.SoundFile.FullName))
+            using (var waveChannel32 = new WaveChannel32(audioFileStream, sound.Volume * 0.25f, 0f) { PadWithZeroes = false })
             using (var effectStream = new EffectStream(waveChannel32))
             using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))
             using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat)) {
@@ -30,25 +29,26 @@ namespace BundtBot.BundtBot {
                 ApplyEffects(waveChannel32, effectStream, sound);
 
                 // Establish the size of our AudioBuffer
-                int blockSize = outFormat.AverageBytesPerSecond / 50;
-                byte[] buffer = new byte[blockSize];
+                var blockSize = outFormat.AverageBytesPerSecond / 50;
+                var buffer = new byte[blockSize];
                 int byteCount;
 
                 // Read audio into our buffer, and keep a loop open while data is present
                 while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
                     // Limit play length (--length)
                     timePlayed += (byteCount * 1000) / outFormat.AverageBytesPerSecond;
-                    if (sound.length_ms > 0 && timePlayed > sound.length_ms) {
+                    if (sound.Length > 0 && timePlayed > sound.Length) {
                         break;
                     }
 
                     if (byteCount < blockSize) {
                         // Incomplete Frame
-                        for (int i = byteCount; i < blockSize; i++)
+                        for (var i = byteCount; i < blockSize; i++) {
                             buffer[i] = 0;
+                        }
                     }
 
-                    if (audioClient.State == ConnectionState.Disconnected || stop) {
+                    if (audioClient.State == ConnectionState.Disconnected || Stop) {
                         break;
                     }
 
@@ -62,27 +62,27 @@ namespace BundtBot.BundtBot {
                 MyLogger.WriteLine("Voice finished enqueuing", ConsoleColor.Green);
             }
 
-            if (stop) {
+            if (Stop) {
                 audioClient.Clear();
-                stop = false;
+                Stop = false;
             }
 
             audioClient.Wait();
         }
 
-        void ApplyEffects(WaveChannel32 waveChannel32, EffectStream effectStream, Sound sound) {
-            for (int i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
-                if (sound.echo) {
-                    if (sound.echoLength > 0) {
-                        if (sound.echoFactor > 0) {
-                            effectStream.Effects.Add(new Echo(sound.echoLength, sound.echoFactor));
+        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, Sound sound) {
+            for (var i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
+                if (sound.Echo) {
+                    if (sound.EchoLength > 0) {
+                        if (sound.EchoFactor > 0) {
+                            effectStream.Effects.Add(new Echo(sound.EchoLength, sound.EchoFactor));
                         } else {
-                            effectStream.Effects.Add(new Echo(sound.echoLength));
+                            effectStream.Effects.Add(new Echo(sound.EchoLength));
                         }
                     } else {
                         effectStream.Effects.Add(new Echo());
                     }
-                } else if (sound.reverb) {
+                } else if (sound.Reverb) {
                     effectStream.Effects.Add(new Reverb());
                 }
             }

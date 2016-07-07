@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Linq;
 
 namespace BundtBot.BundtBot {
     public static class MyLogger {
 
-        public static bool enableTimestamps = false;
+        public static bool EnableTimestamps = false;
 
         public static void Write(string message, ConsoleColor color) {
             var startingColor = Console.ForegroundColor;
@@ -24,7 +23,7 @@ namespace BundtBot.BundtBot {
             ConsoleColorHelper.ResetRoundRobinToStart();
             var startingColor = Console.ForegroundColor;
 
-            foreach (char item in message) {
+            foreach (var item in message) {
                 if (item == '\n') {
                     ConsoleColorHelper.ResetRoundRobinToStart();
                     Write(item.ToString());
@@ -47,7 +46,7 @@ namespace BundtBot.BundtBot {
         }
 
         public static void Write(string message) {
-            if (enableTimestamps) {
+            if (EnableTimestamps) {
                 Console.Write(DateTime.Now + " | " + message);
             } else {
                 Console.Write(message);
@@ -55,7 +54,7 @@ namespace BundtBot.BundtBot {
         }
 
         public static void WriteLine(string message) {
-            if (enableTimestamps) {
+            if (EnableTimestamps) {
                 Console.WriteLine(DateTime.Now + " | " + message);
             } else {
                 Console.WriteLine(message);

@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Linq;
 
 namespace BundtBot.BundtBot {
     public static class ConsoleColorHelper {
 
-        static int roundRobinIndex = 0;
-        static Random random = new Random();
+        static int _roundRobinIndex;
+        static readonly Random _random = new Random();
 
-        static ConsoleColor[] colors = new[] {
+        static readonly ConsoleColor[] _colors = {
             ConsoleColor.Cyan,
             ConsoleColor.Green,
             ConsoleColor.Magenta,
@@ -16,26 +15,26 @@ namespace BundtBot.BundtBot {
         };
 
         public static ConsoleColor GetRandoColor() {
-            var x = random.Next(colors.Count());
-            return colors[x];
+            var x = _random.Next(_colors.Length);
+            return _colors[x];
         }
 
         public static ConsoleColor GetRoundRobinColor() {
-            if (roundRobinIndex == (colors.Length - 1)) {
-                roundRobinIndex = 0;
+            if (_roundRobinIndex == (_colors.Length - 1)) {
+                _roundRobinIndex = 0;
             } else {
-                roundRobinIndex++;
+                _roundRobinIndex++;
             }
             
-            return colors[roundRobinIndex];
+            return _colors[_roundRobinIndex];
         }
 
         public static void ResetRoundRobinToStart() {
-            roundRobinIndex = 0;
+            _roundRobinIndex = 0;
         }
 
         public static void ResetRoundRobinRandomly() {
-            roundRobinIndex = random.Next(colors.Count());
+            _roundRobinIndex = _random.Next(_colors.Length);
         }
     }
 }
