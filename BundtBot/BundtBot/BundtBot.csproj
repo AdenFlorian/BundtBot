@@ -164,9 +164,6 @@
     <Compile Include="BundtBot\Sound.cs" />
     <Compile Include="BundtBot\SoundManager.cs" />
     <Compile Include="BundtBot\ToolBox.cs" />
-    <Compile Include="BundtBot\MyWebClient.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="BundtBot\Program.cs" />
     <Compile Include="BundtBot\YoutubeDownloader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

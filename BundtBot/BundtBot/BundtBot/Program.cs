@@ -172,7 +172,6 @@ namespace BundtBot.BundtBot {
             #endregion
 
             #region SoundBoard
-            // TODO Fix !stop
             commandService.CreateCommand("stop")
                 .Alias("shutup", "stfu", "👎", "🚫🎶", "🚫 🎶")
                 .Description("Please don't stop the :notes:.")
