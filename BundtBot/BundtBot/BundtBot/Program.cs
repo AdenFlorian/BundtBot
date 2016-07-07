@@ -88,6 +88,9 @@ namespace BundtBot.BundtBot {
 
             #region CommandEvents
             commandService.CommandErrored += async (s, e) => {
+                if (e.Exception == null) {
+                    return;
+                }
                 MyLogger.WriteLine("[CommandErrored] " + e.Exception.Message, ConsoleColor.DarkMagenta);
                 await e.Channel.SendMessage(e.Exception.Message);
             };
