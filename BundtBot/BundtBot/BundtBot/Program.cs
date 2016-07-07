@@ -402,11 +402,10 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
                     return;
                 }
-                // If AFK channel
-                /*if (voiceChannelAfter.) {
+                if (e.Channel.IsAFK) {
                     MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
                     return;
-                }*/
+                }
                 if (_soundManager.IsPlaying) {
                     MyLogger.WriteLine("_soundManager.HasThingsInQueue() is true. Ignoring...");
                     return;
