@@ -159,6 +159,7 @@
     <Compile Include="BundtBot\CatDog.cs" />
     <Compile Include="BundtBot\Constants.cs" />
     <Compile Include="BundtBot\FFMPEG.cs" />
+    <Compile Include="BundtBot\NumberSpeller.cs" />
     <Compile Include="BundtBot\Reverb.cs" />
     <Compile Include="BundtBot\Echo.cs" />
     <Compile Include="BundtBot\EffectStream.cs" />

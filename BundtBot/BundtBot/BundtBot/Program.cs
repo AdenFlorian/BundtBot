@@ -114,20 +114,23 @@ namespace BundtBot.BundtBot {
             commandService.CreateCommand("changelog")
                 .Alias("what's new")
                 .Description("cha cha cha chaaangeeeessss.")
+                .Parameter("number of commits to pull", ParameterType.Optional)
                 .Do(async e => {
+                    var arg1 = e.GetArg("number of commits to pull");
+                    if (arg1.IsNullOrWhiteSpace()) arg1 = "5";
+                    var numOfCommitsToPull = int.Parse(arg1);
+                    if (numOfCommitsToPull > 42) numOfCommitsToPull = 42;
+                    if (numOfCommitsToPull < 1) numOfCommitsToPull = 5;
                     // Get last 5 commit messages from the AdenFlorian/BundtBot github project
                     var client = new GitHubClient(new ProductHeaderValue("AdenFlorian-BundtBot"));
-
                     var commits = await client.Repository.Commit.GetAll("AdenFlorian", "BundtBot");
-
-                    var fiveCommits = commits.Take(5);
-
+                    var fiveCommits = commits.Take(numOfCommitsToPull).ToList();
                     var msg = "";
-
-                    foreach (var commit in fiveCommits) {
-                        msg += commit.Commit.Message + "\n";
-                    }
-
+                    fiveCommits.ForEach(x => msg += "🔹 " + x.Commit.Message + "\n");
+                    var xx = numOfCommitsToPull.ToString().Select(x => x.ToString()).ToList();
+                    var numberEmojiString = "";
+                    xx.ForEach(num => numberEmojiString += ":" + int.Parse(num).ToVerbal() + ":");
+                    await e.Channel.SendMessage($"Last {numberEmojiString} commits from `AdenFlorian/BundtBot` on github:");
                     await e.Channel.SendMessage(msg);
                 });
             commandService.CreateCommand("cat")
