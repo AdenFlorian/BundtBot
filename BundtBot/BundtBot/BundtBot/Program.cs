@@ -9,6 +9,7 @@ using Discord.Audio;
 using Discord.Commands;
 using NString;
 using WrapYoutubeDl;
+using Octokit;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -109,6 +110,25 @@ namespace BundtBot.BundtBot {
                 .Description("people tell me i need ot get help.")
                 .Do(async e => {
                     await e.Channel.SendMessage("https://github.com/AdenFlorian/DiscordSharp_Starter");
+                });
+            commandService.CreateCommand("changelog")
+                .Alias("what's new")
+                .Description("cha cha cha chaaangeeeessss.")
+                .Do(async e => {
+                    // Get last 5 commit messages from the AdenFlorian/BundtBot github project
+                    var client = new GitHubClient(new ProductHeaderValue("AdenFlorian-BundtBot"));
+
+                    var commits = await client.Repository.Commit.GetAll("AdenFlorian", "BundtBot");
+
+                    var fiveCommits = commits.Take(5);
+
+                    var msg = "";
+
+                    foreach (var commit in fiveCommits) {
+                        msg += commit.Commit.Message + "\n";
+                    }
+
+                    await e.Channel.SendMessage(msg);
                 });
             commandService.CreateCommand("cat")
                 .Alias("kitty", "feline", "Felis_catus", "kitten", "🐱", "🐈")
