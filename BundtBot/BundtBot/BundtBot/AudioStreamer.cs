@@ -7,21 +7,25 @@ namespace BundtBot.BundtBot {
     internal class AudioStreamer {
         public volatile bool Stop;
 
+        volatile float _volume;
+
+        public void SetVolume(float newVolume) {
+            // Just an extra check to keep the bot from blowing people's ears out
+            if (newVolume > 1.1f) {
+                throw new ArgumentException("Volume should never be greater than 1!");
+            }
+            _volume = newVolume * 0.25f;
+        }
+
         public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
             var channels = audioService.Config.Channels;
             var timePlayed = 0;
             var outFormat = new WaveFormat(48000, 16, channels);
 
-            // Just an extra check to keep the bot from blowing people's ears out
-            if (sound.Volume > 1.1f) {
-                throw new ArgumentException("Volume should never be greater than 1!");
-            }
-            if (sound.Volume <= 0f) {
-                sound.Volume = 1;
-            }
+            SetVolume(sound.Volume);
 
             using (var audioFileStream = new MediaFoundationReader(sound.SoundFile.FullName))
-            using (var waveChannel32 = new WaveChannel32(audioFileStream, sound.Volume * 0.25f, 0f) { PadWithZeroes = false })
+            using (var waveChannel32 = new WaveChannel32(audioFileStream, _volume, 0f) { PadWithZeroes = false })
             using (var effectStream = new EffectStream(waveChannel32))
             using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))
             using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat)) {
@@ -35,6 +39,8 @@ namespace BundtBot.BundtBot {
 
                 // Read audio into our buffer, and keep a loop open while data is present
                 while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
+                    waveChannel32.Volume = _volume;
+
                     // Limit play length (--length)
                     timePlayed += (byteCount * 1000) / outFormat.AverageBytesPerSecond;
                     if (sound.Length > 0 && timePlayed > sound.Length) {

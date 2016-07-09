@@ -92,26 +92,38 @@ namespace BundtBot.BundtBot {
             }
         }
 
-        public static Tuple<string, string> ParseActorAndSoundNames(List<string> words) {
-            if (words.Count == 1 &&
-                words[0] == "!sb") {
+        public static Tuple<string, string> ParseActorAndSoundNames(string actorAndSoundString) {
+            var words = new List<string>(actorAndSoundString.Trim().Split(' '));
+
+            // ReSharper disable once ConvertIfStatementToSwitchStatement
+            if (words.Count == 0) {
                 words.Add("#random");
                 words.Add("#random");
+            } else if (words.Count == 1) {
+                words.Add("#random");
+            } else if (words.Count > 2) {
+                for (var i = 2; i < words.Count; i++) {
+                    words[1] += " " + words[i];
+                }
             }
 
-            if (words.Count == 2) {
-                words.Add("#random");
-            }
-
-            return Tuple.Create(words[1], words[2]);
+            return Tuple.Create(words[0], words[1]);
         }
         
-        public static List<string> ExtractArgs(ref List<string> words) {
+        /// <summary>
+        /// Removes any args from <paramref name="unparsedParams"/> which start with <c>--</c>,
+        /// and returns the args in a List.
+        /// </summary>
+        public static List<string> ExtractArgs(ref string unparsedParams) {
+            var words = new List<string>(unparsedParams.Trim().Split(' '));
             words.Reverse();
             var args = words.TakeWhile(x => x.StartsWith("--")).ToList();
             words.RemoveRange(0, args.Count);
             words.Reverse();
             words = words.TakeWhile(x => !x.StartsWith("--")).ToList();
+            var parsedParams = "";
+            words.ForEach(x => parsedParams += x + " ");
+            unparsedParams = parsedParams;
             return args;
         }
 

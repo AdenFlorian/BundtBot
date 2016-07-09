@@ -76,5 +76,9 @@ namespace BundtBot.BundtBot {
         internal void Skip() {
             _audioStreamer.Stop = true;
         }
+
+        internal void SetVolume(float desiredVolume) {
+            _audioStreamer.SetVolume(desiredVolume);
+        }
     }
 }

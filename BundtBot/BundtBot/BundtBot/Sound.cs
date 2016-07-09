@@ -25,7 +25,7 @@ namespace BundtBot.BundtBot {
         public bool Echo = false;
         public int EchoLength = 0;
         public float EchoFactor = 0;
-        public float Volume = 0f;
+        public float Volume = 1f;
         /// <summary>Length of sound in milliseconds.</summary>
         public int Length = 0;
         #endregion

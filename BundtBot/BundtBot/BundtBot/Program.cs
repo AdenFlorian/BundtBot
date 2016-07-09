@@ -209,28 +209,21 @@ namespace BundtBot.BundtBot {
                     // 2. actor
                     // 3. the sound name (can be multiple words)
                     // So, if we split by spaces, we should have at least 3 parts
-                    var commandString = e.Message.Text.Trim();
-                    var words = new List<string>(commandString.Split(' '));
+                    var actorAndSoundString = e.Args[0];
 
                     List<string> args;
                     try {
                         // Filter out the arguments (words starting with '--')
-                        args = SoundBoard.ExtractArgs(ref words);
+                        args = SoundBoard.ExtractArgs(ref actorAndSoundString);
                     } catch (Exception ex) {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
                     }
 
-                    var actorAndSoundNames = SoundBoard.ParseActorAndSoundNames(words);
+                    var actorAndSoundNames = SoundBoard.ParseActorAndSoundNames(actorAndSoundString);
 
                     var actorName = actorAndSoundNames.Item1;
                     var soundName = actorAndSoundNames.Item2;
-
-                    if (words.Count > 3) {
-                        for (var i = 3; i < words.Count; i++) {
-                            soundName += " " + words[i];
-                        }
-                    }
 
                     FileInfo soundFile;
                     
@@ -254,28 +247,29 @@ namespace BundtBot.BundtBot {
                 });
             commandService.CreateCommand("youtube")
                 // TODO These checks seem to be broken
-                //.AddCheck((c, u, x) => _soundBoard.locked == false, Constants.SOUNDBOARD_LOCKED)
                 //.AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
-                .Alias("yt")
+                .Alias("yt", "ytr")
                 .Description("It's a tube for you!")
                 .Parameter("search string", ParameterType.Unparsed)
                 .Do(async e => {
-                    // First validate the command is correct
-                    string ytSearchString;
+                    var unparsedArgsString = e.Args[0];
 
-                    var commandString = e.Message.Text.Trim();
-
-                    if (commandString.StartsWith("!youtube ") &&
-                        commandString.Length > 9) {
-                        ytSearchString = commandString.Substring(9);
-                    } else if (commandString.StartsWith("!yt ") &&
-                        commandString.Length > 4) {
-                        ytSearchString = commandString.Substring(4);
-                    } else {
-                        await e.Channel.SendMessage("you're doing it wrong (or something broke)");
+                    if (unparsedArgsString.IsNullOrWhiteSpace()) {
+                        await e.Channel.SendMessage("http://i1.kym-cdn.com/photos/images/original/000/614/523/644.jpg"
+                            + "\ndo it liek dis `!yt This Is Gangsta Rap`");
                         return;
                     }
 
+                    List<string> args;
+                    try {
+                        // Filter out the arguments (words starting with '--')
+                        args = SoundBoard.ExtractArgs(ref unparsedArgsString);
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+                    
+                    var ytSearchString = unparsedArgsString;
                     var voiceChannel = e.User.VoiceChannel;
 
                     if (voiceChannel == null) {
@@ -296,7 +290,7 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
                     await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
 
-                    var mp3OutputFolder = "c:/@mp3/";
+                    const string mp3OutputFolder = "c:/@mp3/";
 
                     // See if file exists
                     var possibleSoundFile = new FileInfo(mp3OutputFolder + youtubeVideoID + ".wav");
@@ -323,8 +317,40 @@ namespace BundtBot.BundtBot {
                         DeleteAfterPlay = false
                     };
 
+                    try {
+                        if (args.Count > 0) {
+                            SoundBoard.ParseArgs(args, ref sound);
+                        }
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+
                     _soundManager.EnqueueSound(sound);
                 });
+            commandService.CreateCommand("volume")
+                .Alias("vol", "🔉")
+                .Description("turn down fer wut (1 to 10, 1 being down, 10 being fer wut).")
+                .Parameter("desired volume")
+                .Do(async e => {
+                    try {
+                        var desiredVolume = float.Parse(e.Args[0]) / 10f;
+                        _soundManager.SetVolume(desiredVolume);
+                        await e.Channel.SendMessage("is dat betta?");
+                    } catch (Exception) {
+                        await e.Channel.SendMessage("wat did u doo to dah volumez");
+                        throw;
+                    }
+                });
+            #endregion
+
+            #region AliasCommands
+            // TODO
+            /*commandService.CreateCommand("potg")
+                .Description("gratz on your play of the game")
+                .Do(async e => {
+                    
+                });*/
             #endregion
         }
 
