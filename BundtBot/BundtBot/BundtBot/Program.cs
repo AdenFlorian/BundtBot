@@ -96,7 +96,6 @@ namespace BundtBot.BundtBot {
 
             #region boring commands
             commandService.CreateCommand("credits")
-                .Alias("github")
                 .Description("Prints who made this thing.")
                 .Do(async e => {
                     await e.Channel.SendMessage("!owsb <character name> <phrase>"
@@ -104,6 +103,12 @@ namespace BundtBot.BundtBot {
                         + "\ncreated by @AdenFlorian"
                         + "\nhttps://github.com/AdenFlorian/DiscordSharp_Starter"
                         + "\nhttps://trello.com/b/VKqUgzwV/bundtbot#");
+                });
+            commandService.CreateCommand("github")
+                .Alias("git", "🐙 🐱", "🐙🐱")
+                .Description("people tell me i need ot get help.")
+                .Do(async e => {
+                    await e.Channel.SendMessage("https://github.com/AdenFlorian/DiscordSharp_Starter");
                 });
             commandService.CreateCommand("cat")
                 .Alias("kitty", "feline", "Felis_catus", "kitten", "🐱", "🐈")
