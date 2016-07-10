@@ -12,6 +12,7 @@ using Discord.Commands;
 using NString;
 using WrapYoutubeDl;
 using Octokit;
+using BundtBot.BundtBot.Extensions;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -452,42 +453,17 @@ namespace BundtBot.BundtBot {
                 e.User.Server.DefaultChannel.SendMessage("beware of the airhorns...");
             };
             _client.UserUpdated += (s, e) => {
-            };
-            _client.UserJoinedVoiceChannel += (s, e) => {
-                if (e.User.IsBot) {
-                    MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
-                    return;
+                var voiceChannelBefore = e.Before.VoiceChannel;
+                var voiceChannelAfter = e.After.VoiceChannel;
+                if (voiceChannelBefore == voiceChannelAfter) return;
+                // Then user's voice channel changed
+                if (voiceChannelBefore != null) {
+                    // OnUserLeaveVoiceChannel
                 }
-                if (e.Channel.IsAFK) {
-                    MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
-                    return;
+                if (voiceChannelAfter != null) {
+                    // OnUserJoinVoiceChannel
+                    OnUserJoinedVoiceChannel(new ChannelUserEventArgs(voiceChannelAfter, e.After));
                 }
-                if (_soundManager.IsPlaying) {
-                    MyLogger.WriteLine("_soundManager.HasThingsInQueue() is true. Ignoring...");
-                    return;
-                }
-                MyLogger.WriteLine(e.User.Name + " joined voice channel: " + e.Channel);
-                var list = new[] {
-                    Tuple.Create("reinhardt", "hello"),
-                    Tuple.Create("genji", "hello"),
-                    Tuple.Create("mercy", "hello"),
-                    Tuple.Create("torbjorn", "hello"),
-                    Tuple.Create("winston", "hi there"),
-                    Tuple.Create("suhdude", "#random")
-                };
-                var i = _random.Next(list.Length);
-                var x = list[i];
-                MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
-                FileInfo soundFile;
-                if (_soundBoard.TryGetSoundPath(x.Item1, x.Item2, out soundFile) == false) {
-                    MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
-                    return;
-                }
-                var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel);
-                _soundManager.EnqueueSound(sound, false);
-            };
-            _client.UserLeftVoiceChannel += (s, e) => {
-                MyLogger.WriteLine(e.User.Name + " left voice channel: " + e.Channel);
             };
             _client.UserLeft += (sender, e) => {
                 // Can't send message to server if we just left it
@@ -505,6 +481,40 @@ namespace BundtBot.BundtBot {
             #endregion
 
             MyLogger.WriteLine("Done!");
+        }
+
+        void OnUserJoinedVoiceChannel(ChannelUserEventArgs e) {
+            if (e.User.IsBot) {
+                MyLogger.WriteLine("Bot joined a voice channel. Ignoring...");
+                return;
+            }
+            if (e.Channel.IsAFK()) {
+                MyLogger.WriteLine("User joined an AFK voice channel. Ignoring...");
+                return;
+            }
+            if (_soundManager.IsPlaying) {
+                MyLogger.WriteLine("_soundManager.HasThingsInQueue() is true. Ignoring...");
+                return;
+            }
+            MyLogger.WriteLine(e.User.Name + " joined voice channel: " + e.Channel);
+            var list = new[] {
+                Tuple.Create("reinhardt", "hello"),
+                Tuple.Create("genji", "hello"),
+                Tuple.Create("mercy", "hello"),
+                Tuple.Create("torbjorn", "hello"),
+                Tuple.Create("winston", "hi there"),
+                Tuple.Create("suhdude", "#random")
+            };
+            var i = _random.Next(list.Length);
+            var x = list[i];
+            MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
+            FileInfo soundFile;
+            if (_soundBoard.TryGetSoundPath(x.Item1, x.Item2, out soundFile) == false) {
+                MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
+                return;
+            }
+            var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel);
+            _soundManager.EnqueueSound(sound, false);
         }
     }
 }
