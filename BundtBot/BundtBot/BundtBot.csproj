@@ -155,24 +155,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BundtBot\AudioStreamer.cs" />
+    <Compile Include="BundtBot\Sound\SoundStreamer.cs" />
     <Compile Include="BundtBot\CatDog.cs" />
     <Compile Include="BundtBot\Constants.cs" />
     <Compile Include="BundtBot\FFMPEG.cs" />
-    <Compile Include="BundtBot\NumberSpeller.cs" />
-    <Compile Include="BundtBot\Reverb.cs" />
-    <Compile Include="BundtBot\Echo.cs" />
-    <Compile Include="BundtBot\EffectStream.cs" />
-    <Compile Include="BundtBot\ConsoleColorHelper.cs" />
-    <Compile Include="BundtBot\IEffect.cs" />
-    <Compile Include="BundtBot\MyLogger.cs" />
-    <Compile Include="BundtBot\Sound.cs" />
-    <Compile Include="BundtBot\SoundManager.cs" />
-    <Compile Include="BundtBot\ToolBox.cs" />
+    <Compile Include="BundtBot\Utility\NumberSpeller.cs" />
+    <Compile Include="BundtBot\Effects\Reverb.cs" />
+    <Compile Include="BundtBot\Effects\Echo.cs" />
+    <Compile Include="BundtBot\Effects\EffectStream.cs" />
+    <Compile Include="BundtBot\Utility\ConsoleColorHelper.cs" />
+    <Compile Include="BundtBot\Effects\IEffect.cs" />
+    <Compile Include="BundtBot\Utility\MyLogger.cs" />
+    <Compile Include="BundtBot\Sound\Sound.cs" />
+    <Compile Include="BundtBot\Sound\SoundManager.cs" />
+    <Compile Include="BundtBot\Utility\ToolBox.cs" />
     <Compile Include="BundtBot\Program.cs" />
     <Compile Include="BundtBot\YoutubeDownloader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="BundtBot\SoundBoard.cs" />
+    <Compile Include="BundtBot\Sound\SoundBoard.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

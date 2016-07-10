@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using BundtBot.BundtBot.Utility;
 using Discord;
 using Discord.Audio;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Sound {
     class SoundManager {
         internal bool HasThingsInQueue => _soundQueue.Count > 0;
         internal bool IsPlaying { get; private set; }
         public bool Shutdown { get; set; } = false;
 
         ConcurrentQueue<Sound> _soundQueue = new ConcurrentQueue<Sound>();
-        readonly AudioStreamer _audioStreamer = new AudioStreamer();
+        readonly SoundStreamer _audioStreamer = new SoundStreamer();
 
         public SoundManager() {
             new Thread(async() => {

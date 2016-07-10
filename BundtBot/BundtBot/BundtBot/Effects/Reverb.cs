@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Effects {
     public class Reverb : IEffect {
 
         public int EchoLength { get; private set; }

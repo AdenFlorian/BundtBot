@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BundtBot.BundtBot.Utility;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Sound {
     class SoundBoard {
         readonly Random _random = new Random();
 

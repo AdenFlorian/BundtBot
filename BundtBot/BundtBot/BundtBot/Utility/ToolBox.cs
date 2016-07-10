@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Utility {
     public static class ToolBox {
         /// <summary>
         /// Compute the distance between two strings.

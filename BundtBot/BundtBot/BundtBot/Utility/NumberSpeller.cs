@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Utility {
     /// <summary>
     /// Adam Robinson
     /// http://stackoverflow.com/questions/2600746/print-value-of-number-int-spelled-out

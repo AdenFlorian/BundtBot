@@ -1,10 +1,12 @@
 ﻿using System;
+using BundtBot.BundtBot.Effects;
+using BundtBot.BundtBot.Utility;
 using Discord;
 using Discord.Audio;
 using NAudio.Wave;
 
-namespace BundtBot.BundtBot {
-    internal class AudioStreamer {
+namespace BundtBot.BundtBot.Sound {
+    internal class SoundStreamer {
         public volatile bool Stop;
 
         volatile float _volume;
@@ -17,7 +19,7 @@ namespace BundtBot.BundtBot {
             _volume = newVolume * 0.25f;
         }
 
-        public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
+        public void PlaySound(AudioService audioService, IAudioClient audioClient, BundtBot.Sound.Sound sound) {
             var channels = audioService.Config.Channels;
             var timePlayed = 0;
             var outFormat = new WaveFormat(48000, 16, channels);
@@ -76,7 +78,7 @@ namespace BundtBot.BundtBot {
             audioClient.Wait();
         }
 
-        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, Sound sound) {
+        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, BundtBot.Sound.Sound sound) {
             for (var i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
                 if (sound.Echo) {
                     if (sound.EchoLength > 0) {

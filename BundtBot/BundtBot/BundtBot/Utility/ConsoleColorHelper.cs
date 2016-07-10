@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Utility {
     public static class ConsoleColorHelper {
 
         static int _roundRobinIndex;

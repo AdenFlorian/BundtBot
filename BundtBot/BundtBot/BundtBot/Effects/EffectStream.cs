@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NAudio.Wave;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Effects {
     public class EffectStream : WaveStream {
         public WaveStream SourceStream { get; set; }
 

@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using BundtBot.BundtBot.Sound;
+using BundtBot.BundtBot.Utility;
 using Discord;
 using Discord.Audio;
 using Discord.Commands;
@@ -260,7 +262,7 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var sound = new Sound(soundFile, e.Channel, e.User.VoiceChannel);
+                    var sound = new Sound.Sound(soundFile, e.Channel, e.User.VoiceChannel);
 
                     try {
                         if (args.Count > 0) {
@@ -341,7 +343,7 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var sound = new Sound(outputWAVFile, e.Channel, voiceChannel) {
+                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
                         DeleteAfterPlay = false
                     };
 
@@ -481,7 +483,7 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
                     return;
                 }
-                var sound = new Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel);
+                var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel);
                 _soundManager.EnqueueSound(sound, false);
             };
             _client.UserLeftVoiceChannel += (s, e) => {

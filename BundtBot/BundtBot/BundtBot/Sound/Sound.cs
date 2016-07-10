@@ -3,7 +3,7 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using Discord;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Sound {
     /// <summary>
     /// Describes a sound that can be played to a Discord voice channel.
     /// </summary>
