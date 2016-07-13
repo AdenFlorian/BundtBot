@@ -14,6 +14,7 @@ using NString;
 using WrapYoutubeDl;
 using Octokit;
 using BundtBot.BundtBot.Extensions;
+using Discord.Net;
 using RedditSharp;
 using RedditSharp.Things;
 using static RedditSharp.Things.VotableThing;
@@ -81,17 +82,18 @@ namespace BundtBot.BundtBot {
 
             RegisterEventHandlers();
 
-            _client.ExecuteAndWait(async () => {
-                while (true) {
-                    try {
+            while (true) {
+                try {
+                    _client.ExecuteAndWait(async () => {
                         await _client.Connect(botToken);
-                        break;
-                    } catch (Exception ex) {
-                        MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
-                        MyLogger.WriteException(ex);
-                    }
+                    });
+                    //break;
+                } catch (Exception ex) {
+                    MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
+                    MyLogger.WriteException(ex);
                 }
-            });
+            }
+            
         }
 
         void SetupCommands() {
@@ -462,7 +464,18 @@ namespace BundtBot.BundtBot {
             _client.ServerAvailable += async (sender, e) => {
                 MyLogger.Write("Server available! ");
                 MyLogger.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
-                await e.Server.CurrentUser.Edit(nickname: "bundtbot v" + _version);
+                try {
+                    await e.Server.CurrentUser.Edit(nickname: "bundtbot v" + _version);
+                }
+                catch (HttpException ex) {
+                    MyLogger.WriteLine($"{ex.GetType()} thrown from trying to change the bot's nickname",
+                        ConsoleColor.DarkYellow);
+                    MyLogger.WriteLine("The bot might not have permission on that server to change it's nickname",
+                        ConsoleColor.DarkYellow);
+                }
+                catch (Exception ex) {
+                    MyLogger.WriteException(ex);
+                }
             };
             _client.JoinedServer += (sender, e) => {
                 MyLogger.WriteLine("Joined Server! " + e.Server.Name);
