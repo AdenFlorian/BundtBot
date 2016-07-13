@@ -27,7 +27,7 @@ namespace BundtBot.BundtBot.Utility {
 
             var builder = new StringBuilder();
 
-            var unit = 0;
+            int unit;
 
             if (value >= Quadrillion) {
                 unit = (int) (value/Quadrillion);

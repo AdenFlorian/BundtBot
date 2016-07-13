@@ -19,7 +19,7 @@ namespace BundtBot.BundtBot.Sound {
             _volume = newVolume * 0.25f;
         }
 
-        public void PlaySound(AudioService audioService, IAudioClient audioClient, BundtBot.Sound.Sound sound) {
+        public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
             var channels = audioService.Config.Channels;
             var timePlayed = 0;
             var outFormat = new WaveFormat(48000, 16, channels);
@@ -78,7 +78,7 @@ namespace BundtBot.BundtBot.Sound {
             audioClient.Wait();
         }
 
-        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, BundtBot.Sound.Sound sound) {
+        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, Sound sound) {
             for (var i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
                 if (sound.Echo) {
                     if (sound.EchoLength > 0) {

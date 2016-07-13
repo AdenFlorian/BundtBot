@@ -13,9 +13,7 @@ namespace BundtBot.BundtBot {
         decimal _lastPercentage;
 
         public async Task<string> YoutubeDownloadAndConvert(CommandEventArgs e, string ytSearchString, string mp3OutputFolder) {
-            var urlToDownload = "\"ytsearch1:"
-                                + ytSearchString
-                                + "\"";
+            var urlToDownload = ytSearchString;
             var newFilename = Guid.NewGuid().ToString();
 
             var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);

@@ -9,6 +9,8 @@ namespace BundtBot.BundtBot.Sound {
     class SoundManager {
         internal bool HasThingsInQueue => _soundQueue.Count > 0;
         internal bool IsPlaying { get; private set; }
+        /// <summary> The voice channel that we are currently streaming to, if any. </summary>
+        internal Channel VoiceChannel { get; private set; }
         public bool Shutdown { get; set; } = false;
 
         ConcurrentQueue<Sound> _soundQueue = new ConcurrentQueue<Sound>();
@@ -36,6 +38,8 @@ namespace BundtBot.BundtBot.Sound {
                     MyLogger.WriteLine("\tOn server:  " + sound.VoiceChannel.Server.Name);
                     var audioService = sound.VoiceChannel.Client.GetService<AudioService>();
                     var audioClient = await audioService.Join(sound.VoiceChannel);
+                    VoiceChannel = sound.VoiceChannel;
+                    await sound.TextChannel.SendMessage($"Playing {sound.SoundFile.Name} at Volume {sound.Volume * 10}");
 
                     _audioStreamer.PlaySound(audioService, audioClient, sound);
 
@@ -53,6 +57,7 @@ namespace BundtBot.BundtBot.Sound {
                     }
                     
                     await audioService.Leave(sound.VoiceChannel);
+                    VoiceChannel = null;
                     Thread.Sleep(250);
                 }
             }).Start();
@@ -64,6 +69,7 @@ namespace BundtBot.BundtBot.Sound {
                 msg = await sound.TextChannel.SendMessage("Adding sound to the queue...");
             }
             _soundQueue.Enqueue(sound);
+            MyLogger.WriteLine("[SoundManager] Sound queued: " + sound.SoundFile.Name);
             if (sendTextUpdates) {
                 await msg.Edit(msg.Text + "done!");
             }
@@ -72,14 +78,17 @@ namespace BundtBot.BundtBot.Sound {
         internal void Stop() {
             _soundQueue = new ConcurrentQueue<Sound>();
             _audioStreamer.Stop = true;
+            MyLogger.WriteLine("[SoundManager] Stopped");
         }
 
         internal void Skip() {
             _audioStreamer.Stop = true;
+            MyLogger.WriteLine("[SoundManager] Skipped");
         }
 
         internal void SetVolume(float desiredVolume) {
             _audioStreamer.SetVolume(desiredVolume);
+            MyLogger.WriteLine("[SoundManager] Volume set to " + desiredVolume);
         }
     }
 }

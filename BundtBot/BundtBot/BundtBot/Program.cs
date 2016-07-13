@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using BundtBot.BundtBot.Sound;
 using BundtBot.BundtBot.Utility;
 using Discord;
@@ -13,6 +14,9 @@ using NString;
 using WrapYoutubeDl;
 using Octokit;
 using BundtBot.BundtBot.Extensions;
+using RedditSharp;
+using RedditSharp.Things;
+using static RedditSharp.Things.VotableThing;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -78,7 +82,15 @@ namespace BundtBot.BundtBot {
             RegisterEventHandlers();
 
             _client.ExecuteAndWait(async () => {
-                await _client.Connect(botToken);
+                while (true) {
+                    try {
+                        await _client.Connect(botToken);
+                        break;
+                    } catch (Exception ex) {
+                        MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
+                        MyLogger.WriteException(ex);
+                    }
+                }
             });
         }
 
@@ -157,10 +169,8 @@ namespace BundtBot.BundtBot {
                         msg = "Yes, you are! ┌( ಠ‿ಠ)┘";
                     } else {
                         msg = "No, you aren't (-_-｡), but these people are!";
-                        var admins = e.Server.Users.Where(x => x.ServerPermissions.Administrator);
-                        foreach (var admin in admins) {
-                            msg += $" | {admin.Name} | ";
-                        }
+                        var admins = e.Server.Users.Where(x => x.ServerPermissions.Administrator).ToList();
+                        admins.ForEach(x => msg += $" | {x.Name} | ");
                     }
                     await e.Channel.SendMessage(msg);
                 });
@@ -283,6 +293,21 @@ namespace BundtBot.BundtBot {
                 .Description("It's a tube for you!")
                 .Parameter("search string", ParameterType.Unparsed)
                 .Do(async e => {
+                    if (e.Args[0] == "#haiku") {
+                        var reddit = new Reddit();
+                        //var user = reddit.LogIn("username", "password");
+                        var subreddit = reddit.GetSubreddit("/r/youtubehaiku");
+                        //subreddit.Subscribe();
+                        var thing = subreddit.New.Take(50).ToList();
+                        var xxx = thing[_random.Next(0, thing.Count)];
+                        e.Args[0] = xxx.Url.AbsoluteUri;
+                        /*var reddit = new Reddit();
+                        var subred = reddit.GetSubreddit("youtubehaiku");
+                        var top = subred.GetTop(FromTime.Year).GetListing(10);
+                        var randomhaiku = top.ToArray()[_random.Next(0, top.Count())];
+                        var haikuYoutube = randomhaiku.Url;*/
+                    }
+
                     var unparsedArgsString = e.Args[0];
 
                     if (unparsedArgsString.IsNullOrWhiteSpace()) {
@@ -312,12 +337,12 @@ namespace BundtBot.BundtBot {
 
                     // Get video id
                     MyLogger.WriteLine("Getting youtube video id...");
-                    var youtubeVideoID = await new YoutubeVideoID().Get(ytSearchString);
+                    var youtubeVideoID = await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
                     MyLogger.WriteLine("Youtube video ID get! " + youtubeVideoID, ConsoleColor.Green);
 
                     // Get video name
                     MyLogger.WriteLine("Getting youtube video title...");
-                    var youtubeVideoTitle = await new YoutubeVideoName().Get(ytSearchString);
+                    var youtubeVideoTitle = await new YoutubeVideoName().Get($"\"ytsearch1:{ytSearchString}\"");
                     MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
                     await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
 
@@ -329,7 +354,13 @@ namespace BundtBot.BundtBot {
                     FileInfo outputWAVFile;
 
                     if (possibleSoundFile.Exists == false) {
-                        var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
+                        string youtubeOutput;
+                        if (ytSearchString.Contains("youtube.com/watch?")) {
+                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
+                        }
+                        else {
+                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, $"\"ytsearch1:{ytSearchString}\"", mp3OutputFolder);
+                        }
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
                         outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
                         await msg.Edit(msg.Text + "finished! Sending data...");
@@ -356,7 +387,8 @@ namespace BundtBot.BundtBot {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
                     }
-
+                    // Defaulting youtube volume to 5 because they are long
+                    sound.Volume = 0.5f;
                     _soundManager.EnqueueSound(sound);
                 });
             commandService.CreateCommand("volume")
@@ -385,13 +417,13 @@ namespace BundtBot.BundtBot {
             #endregion
         }
 
-        void WriteBundtBotASCIIArtToConsole() {
+        static void WriteBundtBotASCIIArtToConsole() {
             MyLogger.NewLine();
             MyLogger.WriteLine(Constants.BundtbotASCIIArt, ConsoleColor.Red);
             MyLogger.NewLine();
         }
 
-        string LoadBotToken() {
+        static string LoadBotToken() {
             var token = File.ReadLines(BotTokenPath).First();
             if (token.IsNullOrEmpty()) {
                 throw new Exception("Bot token was empty or null after reading it from " + BotTokenPath);
@@ -446,22 +478,18 @@ namespace BundtBot.BundtBot {
             #region UserEvents
             _client.UserBanned += (s, e) => {
             };
-            _client.UserUpdated += (s, e) => {
+            _client.UserJoined += async (s, e) => {
+                await e.User.Server.DefaultChannel.SendMessage("welcome to server " + e.User.NicknameMention);
+                await e.User.Server.DefaultChannel.SendMessage("beware of the airhorns...");
             };
-            _client.UserJoined += (s, e) => {
-                e.User.Server.DefaultChannel.SendMessage("welcome to server " + e.User.NicknameMention);
-                e.User.Server.DefaultChannel.SendMessage("beware of the airhorns...");
-            };
-            _client.UserUpdated += (s, e) => {
+            _client.UserUpdated += async (s, e) => {
                 var voiceChannelBefore = e.Before.VoiceChannel;
                 var voiceChannelAfter = e.After.VoiceChannel;
                 if (voiceChannelBefore == voiceChannelAfter) return;
-                // Then user's voice channel changed
                 if (voiceChannelBefore != null) {
-                    // OnUserLeaveVoiceChannel
+                    await OnUserLeftVoiceChannel(new ChannelUserEventArgs(voiceChannelBefore, e.After));
                 }
                 if (voiceChannelAfter != null) {
-                    // OnUserJoinVoiceChannel
                     OnUserJoinedVoiceChannel(new ChannelUserEventArgs(voiceChannelAfter, e.After));
                 }
             };
@@ -481,6 +509,15 @@ namespace BundtBot.BundtBot {
             #endregion
 
             MyLogger.WriteLine("Done!");
+        }
+
+        async Task OnUserLeftVoiceChannel(ChannelUserEventArgs e) {
+            if (e.Channel != _soundManager.VoiceChannel) return;
+            if (e.Channel.Users.Count() > 1) return;
+            _soundManager.Stop();
+            await e.Channel.Server.DefaultChannel.SendMessage("sorry i bothered you with my 🎶");
+            MyLogger.WriteLine("[Program] OnUserLeftVoiceChannel - Telling SoundManager to stop," +
+                               " because we are the last user in channel");
         }
 
         void OnUserJoinedVoiceChannel(ChannelUserEventArgs e) {
