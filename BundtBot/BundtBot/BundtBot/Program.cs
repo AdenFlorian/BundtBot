@@ -297,15 +297,9 @@ namespace BundtBot.BundtBot {
                         var reddit = new Reddit();
                         //var user = reddit.LogIn("username", "password");
                         var subreddit = reddit.GetSubreddit("/r/youtubehaiku");
-                        //subreddit.Subscribe();
-                        var thing = subreddit.New.Take(50).ToList();
-                        var xxx = thing[_random.Next(0, thing.Count)];
-                        e.Args[0] = xxx.Url.AbsoluteUri;
-                        /*var reddit = new Reddit();
-                        var subred = reddit.GetSubreddit("youtubehaiku");
-                        var top = subred.GetTop(FromTime.Year).GetListing(10);
-                        var randomhaiku = top.ToArray()[_random.Next(0, top.Count())];
-                        var haikuYoutube = randomhaiku.Url;*/
+                        var posts = subreddit.New.Take(50).ToList();
+                        var post = posts[_random.Next(0, posts.Count)];
+                        e.Args[0] = post.Url.AbsoluteUri;
                     }
 
                     var unparsedArgsString = e.Args[0];
@@ -354,7 +348,7 @@ namespace BundtBot.BundtBot {
                     FileInfo outputWAVFile;
 
                     if (possibleSoundFile.Exists == false) {
-                        string youtubeOutput;
+                        FileInfo youtubeOutput;
                         if (ytSearchString.Contains("youtube.com/watch?")) {
                             youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
                         }
@@ -363,7 +357,7 @@ namespace BundtBot.BundtBot {
                         }
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
                         outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
-                        await msg.Edit(msg.Text + "finished! Sending data...");
+                        await msg.Edit(msg.Text + "finished!");
                     } else {
                         MyLogger.WriteLine("WAV file exists already! " + possibleSoundFile.FullName, ConsoleColor.Green);
                         outputWAVFile = possibleSoundFile;
@@ -380,6 +374,8 @@ namespace BundtBot.BundtBot {
                     };
 
                     try {
+                        // Defaulting youtube volume to 5 because they are long
+                        sound.Volume = 0.5f;
                         if (args.Count > 0) {
                             SoundBoard.ParseArgs(args, ref sound);
                         }
@@ -387,8 +383,6 @@ namespace BundtBot.BundtBot {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
                     }
-                    // Defaulting youtube volume to 5 because they are long
-                    sound.Volume = 0.5f;
                     _soundManager.EnqueueSound(sound);
                 });
             commandService.CreateCommand("volume")

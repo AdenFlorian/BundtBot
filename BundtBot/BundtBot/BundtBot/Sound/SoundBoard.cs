@@ -53,8 +53,12 @@ namespace BundtBot.BundtBot.Sound {
                         throw new ArgumentException("invalid length value, must be a positive foat");
                     }
                     MyLogger.WriteLine("Parsed " + arg + " into " + sound.Length + " milliseconds");
-                } else if (arg.StartsWith("--volume:") &&
-                    arg.Length > 9) {
+                } else if ((arg.StartsWith("--volume:") &&
+                    arg.Length > 9) ||
+                    (arg.StartsWith("--vol:") &&
+                    arg.Length > 6) ||
+                    (arg.StartsWith("--v:") &&
+                    arg.Length > 4)) {
                     try {
                         var intVolume = int.Parse(arg.Substring(9));
                         if (intVolume < 1 || intVolume > 11) {
@@ -71,17 +75,15 @@ namespace BundtBot.BundtBot.Sound {
                         MyLogger.WriteLine("Parsed " + arg);
                     } else {
                         var parts = arg.Split(':');
-                        if (parts.Length > 1) {
-                            sound.EchoLength = (int)(float.Parse(parts[1]) * 1000);
-                            if (sound.EchoLength <= 0 || sound.EchoLength > 50000) {
-                                throw new ArgumentException("bad echo length");
-                            }
-                            if (parts.Length > 2) {
-                                sound.EchoFactor = (float)int.Parse(parts[2]) / 10;
-                                if (sound.EchoFactor <= 0 || sound.EchoFactor > 1f) {
-                                    throw new ArgumentException("bad echo factor");
-                                }
-                            }
+                        if (parts.Length <= 1) continue;
+                        sound.EchoLength = (int)(float.Parse(parts[1]) * 1000);
+                        if (sound.EchoLength <= 0 || sound.EchoLength > 50000) {
+                            throw new ArgumentException("bad echo length");
+                        }
+                        if (parts.Length <= 2) continue;
+                        sound.EchoFactor = (float)int.Parse(parts[2]) / 10;
+                        if (sound.EchoFactor <= 0 || sound.EchoFactor > 1f) {
+                            throw new ArgumentException("bad echo factor");
                         }
                     }
                 } else if (arg.StartsWith("--reverb")) {

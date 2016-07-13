@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using BundtBot.BundtBot.Utility;
 using Discord;
@@ -12,7 +13,7 @@ namespace BundtBot.BundtBot {
         Message _progressMessage;
         decimal _lastPercentage;
 
-        public async Task<string> YoutubeDownloadAndConvert(CommandEventArgs e, string ytSearchString, string mp3OutputFolder) {
+        public async Task<FileInfo> YoutubeDownloadAndConvert(CommandEventArgs e, string ytSearchString, string mp3OutputFolder) {
             var urlToDownload = ytSearchString;
             var newFilename = Guid.NewGuid().ToString();
 
@@ -32,23 +33,25 @@ namespace BundtBot.BundtBot {
             downloader.StartedDownload += downloader_StartedDownload;
 
             _progressMessage = await e.Channel.SendMessage("downloading");
-
-            var outputPath = downloader.Download();
-            if (outputPath.IsNullOrEmpty()) {
-                MyLogger.WriteLine("output path is null :( possibly to big filesize", ConsoleColor.Yellow);
+            FileInfo outputPath;
+            try {
+                outputPath = downloader.Download();
+            }
+            catch (Exception) {
+                MyLogger.WriteLine("downloader.Download(); threw an exception :( possibly to big filesize", ConsoleColor.Yellow);
                 await e.Channel.SendMessage("ummm...bad news...something broke...the video was probably too big to download, so try somethin else, k?");
-                throw new Exception();
+                throw;
             }
             Console.WriteLine("downloader.Download() Finished! " + outputPath);
 
             return outputPath;
         }
 
-        void downloader_ErrorDownload(object sender, ProgressEventArgs e) {
+        static void downloader_ErrorDownload(object sender, ProgressEventArgs e) {
             Console.WriteLine("error");
         }
 
-        void downloader_StartedDownload(object sender, DownloadEventArgs e) {
+        static void downloader_StartedDownload(object sender, DownloadEventArgs e) {
             Console.WriteLine("yotube-dl process started");
         }
     }
