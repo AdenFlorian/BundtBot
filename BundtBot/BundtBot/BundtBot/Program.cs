@@ -16,8 +16,6 @@ using Octokit;
 using BundtBot.BundtBot.Extensions;
 using Discord.Net;
 using RedditSharp;
-using RedditSharp.Things;
-using static RedditSharp.Things.VotableThing;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -557,8 +555,8 @@ namespace BundtBot.BundtBot {
                 MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
                 return;
             }
-            var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel);
-            _soundManager.EnqueueSound(sound, false);
+            var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel) {TextUpdates = false};
+            _soundManager.EnqueueSound(sound);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace BundtBot.BundtBot.Sound {
         /// <summary>The absolute path to the sound file on the local file system.</summary>
         public FileInfo SoundFile { get; private set; }
         /// <summary>The text channel to send messages to.</summary>
-        public Channel TextChannel { get; private set; }
+        public Channel TextChannel { get; }
         /// <summary>The voice channel to play the sound in.</summary>
         public Channel VoiceChannel { get; private set; }
         #endregion
@@ -29,9 +29,13 @@ namespace BundtBot.BundtBot.Sound {
         public float Volume = 1f;
         /// <summary>Length of sound in milliseconds.</summary>
         public int Length = 0;
+        /// <summary>Determines whether updates about this sound should be sent to TextChannel</summary>
+        public bool TextUpdates = true;
         #endregion
-
-
+        
+        /// <param name="soundFile">Must not be null</param>
+        /// <param name="textChannel">Must not be null</param>
+        /// <param name="voiceChannel">Must not be null</param>
         public Sound(FileInfo soundFile, Channel textChannel, Channel voiceChannel) {
             Contract.Requires<ArgumentNullException>(soundFile != null);
             Contract.Requires<FileNotFoundException>(soundFile.Exists);

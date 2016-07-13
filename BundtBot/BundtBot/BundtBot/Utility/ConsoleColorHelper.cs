@@ -20,7 +20,7 @@ namespace BundtBot.BundtBot.Utility {
         }
 
         public static ConsoleColor GetRoundRobinColor() {
-            if (_roundRobinIndex == (_colors.Length - 1)) {
+            if (_roundRobinIndex == _colors.Length - 1) {
                 _roundRobinIndex = 0;
             } else {
                 _roundRobinIndex++;

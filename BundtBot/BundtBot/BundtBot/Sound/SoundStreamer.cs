@@ -6,7 +6,7 @@ using Discord.Audio;
 using NAudio.Wave;
 
 namespace BundtBot.BundtBot.Sound {
-    internal class SoundStreamer {
+    class SoundStreamer {
         public volatile bool Stop;
 
         volatile float _volume;
@@ -44,7 +44,7 @@ namespace BundtBot.BundtBot.Sound {
                     waveChannel32.Volume = _volume;
 
                     // Limit play length (--length)
-                    timePlayed += (byteCount * 1000) / outFormat.AverageBytesPerSecond;
+                    timePlayed += byteCount * 1000 / outFormat.AverageBytesPerSecond;
                     if (sound.Length > 0 && timePlayed > sound.Length) {
                         break;
                     }

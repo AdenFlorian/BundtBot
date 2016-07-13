@@ -1,5 +1,5 @@
 ﻿namespace BundtBot.BundtBot {
-    internal static class Constants {
+    static class Constants {
         public const string BundtbotASCIIArt =
               @" ______                  _       ______             " + "\n"
             + @"(____  \                | |  _  (____  \        _   " + "\n"

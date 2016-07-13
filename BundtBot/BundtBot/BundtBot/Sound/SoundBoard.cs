@@ -151,16 +151,15 @@ namespace BundtBot.BundtBot.Sound {
 
             foreach (var str in actorDirectories) {
                 var score = ToolBox.Levenshtein(actorName, str);
-                if (score < bestScore) {
-                    bestScore = score;
-                    matchedCategory = str;
-                    if (bestScore == 0) {
-                        break;
-                    }
+                if (score >= bestScore) continue;
+                bestScore = score;
+                matchedCategory = str;
+                if (bestScore == 0) {
+                    break;
                 }
             }
 
-            var highestScoreAllowed = 4;
+            const int highestScoreAllowed = 4;
 
             if (bestScore > highestScoreAllowed) {
                 // Score not good enough
@@ -178,7 +177,7 @@ namespace BundtBot.BundtBot.Sound {
         }
 
         /// <summary>Returns true if it found a match</summary>
-        bool CheckSoundName(ref string soundName, string actorName) {
+        static bool CheckSoundName(ref string soundName, string actorName) {
             var soundNames = Directory.GetFiles(BasePath + actorName);
 
             if (soundNames.Length < 1) {
@@ -205,16 +204,15 @@ namespace BundtBot.BundtBot.Sound {
 
             foreach (var str in soundNames) {
                 var score = ToolBox.Levenshtein(soundName, str);
-                if (score < bestScore) {
-                    bestScore = score;
-                    matchedSound = str;
-                    if (bestScore == 0) {
-                        break;
-                    }
+                if (score >= bestScore) continue;
+                bestScore = score;
+                matchedSound = str;
+                if (bestScore == 0) {
+                    break;
                 }
             }
 
-            var highestScoreAllowed = 4;
+            const int highestScoreAllowed = 4;
 
             if (bestScore > highestScoreAllowed) {
                 // Score not good enough

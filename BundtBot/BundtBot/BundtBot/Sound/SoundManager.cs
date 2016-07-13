@@ -39,7 +39,9 @@ namespace BundtBot.BundtBot.Sound {
                     var audioService = sound.VoiceChannel.Client.GetService<AudioService>();
                     var audioClient = await audioService.Join(sound.VoiceChannel);
                     VoiceChannel = sound.VoiceChannel;
-                    await sound.TextChannel.SendMessage($"Playing {sound.SoundFile.Name} at Volume {sound.Volume * 10}");
+                    if (sound.TextUpdates) {
+                        await sound.TextChannel.SendMessage($"Playing {sound.SoundFile.Name} at Volume {sound.Volume * 10}");
+                    }
 
                     _audioStreamer.PlaySound(audioService, audioClient, sound);
 
@@ -63,14 +65,14 @@ namespace BundtBot.BundtBot.Sound {
             }).Start();
         }
 
-        public async void EnqueueSound(Sound sound, bool sendTextUpdates = true) {
+        public async void EnqueueSound(Sound sound) {
             Message msg = null;
-            if (sendTextUpdates) {
+            if (sound.TextUpdates) {
                 msg = await sound.TextChannel.SendMessage("Adding sound to the queue...");
             }
             _soundQueue.Enqueue(sound);
             MyLogger.WriteLine("[SoundManager] Sound queued: " + sound.SoundFile.Name);
-            if (sendTextUpdates) {
+            if (sound.TextUpdates && msg != null) {
                 await msg.Edit(msg.Text + "done!");
             }
         }
