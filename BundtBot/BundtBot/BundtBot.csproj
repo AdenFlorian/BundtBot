@@ -164,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BundtBot\Extensions\DiscordNetExtensions.cs" />
+    <Compile Include="BundtBot\Extensions\ListExtensions.cs" />
     <Compile Include="BundtBot\Sound\SoundStreamer.cs" />
     <Compile Include="BundtBot\CatDog.cs" />
     <Compile Include="BundtBot\Constants.cs" />

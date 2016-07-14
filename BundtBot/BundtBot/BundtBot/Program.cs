@@ -16,6 +16,7 @@ using Octokit;
 using BundtBot.BundtBot.Extensions;
 using Discord.Net;
 using RedditSharp;
+using RedditSharp.Things;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -294,12 +295,7 @@ namespace BundtBot.BundtBot {
                 .Parameter("search string", ParameterType.Unparsed)
                 .Do(async e => {
                     if (e.Args[0] == "#haiku") {
-                        var reddit = new Reddit();
-                        //var user = reddit.LogIn("username", "password");
-                        var subreddit = reddit.GetSubreddit("/r/youtubehaiku");
-                        var posts = subreddit.New.Take(50).ToList();
-                        var post = posts[_random.Next(0, posts.Count)];
-                        e.Args[0] = post.Url.AbsoluteUri;
+                        e.Args[0] = GetYoutubeHaikuUrl().AbsoluteUri;
                     }
 
                     var unparsedArgsString = e.Args[0];
@@ -409,6 +405,18 @@ namespace BundtBot.BundtBot {
                     
                 });*/
             #endregion
+        }
+
+        /// <summary>Get a youtube url from /r/youtubehaiku</summary>
+        static Uri GetYoutubeHaikuUrl() {
+            // Get top 50 posts of all time
+            var reddit = new Reddit();
+            var subreddit = reddit.GetSubreddit("/r/youtubehaiku");
+            var posts = subreddit.GetTop(FromTime.All).Take(50).ToList();
+            // Select a random post from those 50
+            var post = posts.GetRandom();
+            // Return the url
+            return post.Url;
         }
 
         static void WriteBundtBotASCIIArtToConsole() {
