@@ -26,6 +26,7 @@ namespace BundtBot.BundtBot {
         DiscordClient _client;
         string _version = "0.0";
 
+        const string Mp3OutputFolder = "c:/@mp3/";
         const string BotTokenPath = "keys/BotToken.txt";
 
         static void Main() {
@@ -251,7 +252,7 @@ namespace BundtBot.BundtBot {
                     // 2. actor
                     // 3. the sound name (can be multiple words)
                     // So, if we split by spaces, we should have at least 3 parts
-                    var actorAndSoundString = e.Args[0];
+                    var actorAndSoundString = e.Args[0].ToLower();
 
                     List<string> args;
                     try {
@@ -284,20 +285,16 @@ namespace BundtBot.BundtBot {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
                     }
+                    
+                    sound.SoundFile.SetTitleTag(sound.SoundFile.Name.Substring(0, sound.SoundFile.Name.Length - 4));
 
                     _soundManager.EnqueueSound(sound);
                 });
             commandService.CreateCommand("youtube")
-                // TODO These checks seem to be broken
-                //.AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NOT_IN_VOICE)
                 .Alias("yt", "ytr")
                 .Description("It's a tube for you!")
                 .Parameter("search string", ParameterType.Unparsed)
                 .Do(async e => {
-                    if (e.Args[0] == "#haiku") {
-                        e.Args[0] = GetYoutubeHaikuUrl().AbsoluteUri;
-                    }
-
                     var unparsedArgsString = e.Args[0];
 
                     if (unparsedArgsString.IsNullOrWhiteSpace()) {
@@ -314,7 +311,7 @@ namespace BundtBot.BundtBot {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
                     }
-                    
+
                     var ytSearchString = unparsedArgsString;
                     var voiceChannel = e.User.VoiceChannel;
 
@@ -336,34 +333,37 @@ namespace BundtBot.BundtBot {
                     MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
                     await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
 
-                    const string mp3OutputFolder = "c:/@mp3/";
-
                     // See if file exists
-                    var possibleSoundFile = new FileInfo(mp3OutputFolder + youtubeVideoID + ".wav");
+                    var possibleSoundFile = new FileInfo(Mp3OutputFolder + youtubeVideoID + ".wav");
 
                     FileInfo outputWAVFile;
 
                     if (possibleSoundFile.Exists == false) {
                         FileInfo youtubeOutput;
                         if (ytSearchString.Contains("youtube.com/watch?")) {
-                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, mp3OutputFolder);
-                        }
-                        else {
-                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, $"\"ytsearch1:{ytSearchString}\"", mp3OutputFolder);
+                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, Mp3OutputFolder);
+                        } else {
+                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, $"\"ytsearch1:{ytSearchString}\"", Mp3OutputFolder);
                         }
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
                         outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
                         await msg.Edit(msg.Text + "finished!");
+
+                        if (outputWAVFile.Exists == false) {
+                            await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
+                            return;
+                        }
+
+                        var taglibFile = TagLib.File.Create(outputWAVFile.FullName);
+                        taglibFile.Tag.Title = youtubeVideoTitle;
+                        taglibFile.Save();
                     } else {
                         MyLogger.WriteLine("WAV file exists already! " + possibleSoundFile.FullName, ConsoleColor.Green);
                         outputWAVFile = possibleSoundFile;
                         await e.Channel.SendMessage("Playing audio from cache...");
                     }
 
-                    if (outputWAVFile.Exists == false) {
-                        await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
-                        return;
-                    }
+
 
                     var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
                         DeleteAfterPlay = false
@@ -372,6 +372,65 @@ namespace BundtBot.BundtBot {
                     try {
                         // Defaulting youtube volume to 5 because they are long
                         sound.Volume = 0.5f;
+                        if (args.Count > 0) {
+                            SoundBoard.ParseArgs(args, ref sound);
+                        }
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+                    _soundManager.EnqueueSound(sound);
+                });
+            commandService.CreateCommand("youtube_haiku")
+                .Alias("ythaiku", "ythk")
+                .Description("It's snowing on mt fuji")
+                .Parameter("search string", ParameterType.Unparsed)
+                .Do(async e => {
+                    List<string> args;
+                    try {
+                        // Filter out the arguments (words starting with '--')
+                        args = SoundBoard.ExtractArgs(ref e.Args[0]);
+                    } catch (Exception ex) {
+                        await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+
+                    var voiceChannel = e.User.VoiceChannel;
+
+                    if (voiceChannel == null) {
+                        await e.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                        return;
+                    }
+
+                    var haikuMsg = await e.Channel.SendMessage($"☢HAIKU INCOMING☢");
+
+                    var haikuUrl = GetYoutubeHaikuUrl();
+
+                    await haikuMsg.Edit(haikuMsg.Text + $": {haikuUrl.AbsoluteUri}");
+
+                    var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, haikuUrl.AbsoluteUri, Mp3OutputFolder);
+                    var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
+                    var outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
+                    await msg.Edit(msg.Text + "finished!");
+
+                    if (outputWAVFile.Exists == false) {
+                        await e.Channel.SendMessage("that haiku didn't work, sorry, try something else");
+                        return;
+                    }
+
+                    var youtubeVideoTitle = await new YoutubeVideoName().Get(haikuUrl.AbsoluteUri);
+
+                    var taglibFile = TagLib.File.Create(outputWAVFile.FullName);
+                    taglibFile.Tag.Title = youtubeVideoTitle;
+                    taglibFile.Save();
+                    
+                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
+                        DeleteAfterPlay = true
+                    };
+
+                    try {
+                        // Defaulting haikus volume to 8 because they are short
+                        sound.Volume = 0.8f;
                         if (args.Count > 0) {
                             SoundBoard.ParseArgs(args, ref sound);
                         }

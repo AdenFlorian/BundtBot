@@ -188,7 +188,7 @@ namespace BundtBot.BundtBot.Sound {
                 var origName = soundNames[i];
                 var newName = origName.Substring(origName.LastIndexOf('\\') + 1);
                 newName = newName.Substring(0, newName.LastIndexOf('.'));
-                soundNames[i] = newName;
+                soundNames[i] = newName.ToLower();
             }
 
             // If Random

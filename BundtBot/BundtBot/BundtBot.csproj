@@ -133,6 +133,10 @@
       <HintPath>..\packages\Octokit.0.20.0\lib\net45\Octokit.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="policy.2.0.taglib-sharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
+      <HintPath>..\packages\taglib.2.1.0.0\lib\policy.2.0.taglib-sharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="RedditSharp, Version=1.0.22.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RedditSharp.1.0.22\lib\RedditSharp.dll</HintPath>
       <Private>True</Private>
@@ -157,6 +161,10 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="taglib-sharp, Version=2.1.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
+      <HintPath>..\packages\taglib.2.1.0.0\lib\taglib-sharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="WebSocket4Net, Version=0.14.1.0, Culture=neutral, PublicKeyToken=eb4e154b696bf72a, processorArchitecture=MSIL">
       <HintPath>..\packages\WebSocket4Net.0.14.1\lib\net45\WebSocket4Net.dll</HintPath>
       <Private>True</Private>
@@ -164,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BundtBot\Extensions\DiscordNetExtensions.cs" />
+    <Compile Include="BundtBot\Extensions\FileInfoExtensions.cs" />
     <Compile Include="BundtBot\Extensions\ListExtensions.cs" />
     <Compile Include="BundtBot\Sound\SoundStreamer.cs" />
     <Compile Include="BundtBot\CatDog.cs" />

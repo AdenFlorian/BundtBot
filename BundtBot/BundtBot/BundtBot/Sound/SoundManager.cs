@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using BundtBot.BundtBot.Extensions;
 using BundtBot.BundtBot.Utility;
 using Discord;
 using Discord.Audio;
@@ -40,7 +41,7 @@ namespace BundtBot.BundtBot.Sound {
                     var audioClient = await audioService.Join(sound.VoiceChannel);
                     VoiceChannel = sound.VoiceChannel;
                     if (sound.TextUpdates) {
-                        await sound.TextChannel.SendMessage($"Playing {sound.SoundFile.Name} at Volume {sound.Volume * 10}");
+                        await sound.TextChannel.SendMessage($"Playing `{sound.SoundFile.GetTitleTag()}` at Volume **{sound.Volume * 10}**");
                     }
 
                     _audioStreamer.PlaySound(audioService, audioClient, sound);
