@@ -10,6 +10,7 @@ namespace BundtBot.BundtBot.Sound {
     class SoundManager {
         internal bool HasThingsInQueue => _soundQueue.Count > 0;
         internal bool IsPlaying { get; private set; }
+        internal Sound CurrentlyPlayingSound { get; private set; }
         /// <summary> The voice channel that we are currently streaming to, if any. </summary>
         internal Channel VoiceChannel { get; private set; }
         public bool Shutdown { get; set; } = false;
@@ -24,6 +25,7 @@ namespace BundtBot.BundtBot.Sound {
 
                     // Pick something from queue
                     if (_soundQueue.Count == 0) {
+                        CurrentlyPlayingSound = null;
                         IsPlaying = false;
                         Thread.Sleep(100);
                         continue;
@@ -34,6 +36,7 @@ namespace BundtBot.BundtBot.Sound {
                     Sound sound;
                     var result = _soundQueue.TryDequeue(out sound);
                     if (result == false) { continue; }
+                    CurrentlyPlayingSound = sound;
 
                     MyLogger.WriteLine("Connecting to voice channel:" + sound.VoiceChannel.Name);
                     MyLogger.WriteLine("\tOn server:  " + sound.VoiceChannel.Server.Name);

@@ -14,6 +14,7 @@ using NString;
 using WrapYoutubeDl;
 using Octokit;
 using BundtBot.BundtBot.Extensions;
+using BundtBot.BundtBot.Reddit;
 using Discord.Net;
 using RedditSharp;
 using RedditSharp.Things;
@@ -101,11 +102,9 @@ namespace BundtBot.BundtBot {
 
             #region CommandEvents
             commandService.CommandErrored += async (s, e) => {
-                if (e.Exception == null) {
-                    return;
-                }
-                MyLogger.WriteLine("[CommandErrored] " + e.Exception.Message, ConsoleColor.DarkMagenta);
-                await e.Channel.SendMessage(e.Exception.Message);
+                if (e.Exception == null) return;
+                MyLogger.WriteException(e.Exception, "[CommandErrored]");
+                await e.Channel.SendMessage($"bundtbot is brokebot, something broke while processing someone's `{e.Command.Text}` command :(");
             };
             commandService.CommandExecuted += (s, e) => {
                 MyLogger.WriteLine("[CommandExecuted] " + e.Command.Text, ConsoleColor.DarkCyan);
@@ -362,9 +361,7 @@ namespace BundtBot.BundtBot {
                         outputWAVFile = possibleSoundFile;
                         await e.Channel.SendMessage("Playing audio from cache...");
                     }
-
-
-
+                    
                     var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
                         DeleteAfterPlay = false
                     };
@@ -403,8 +400,8 @@ namespace BundtBot.BundtBot {
                     }
 
                     var haikuMsg = await e.Channel.SendMessage($"☢HAIKU INCOMING☢");
-
-                    var haikuUrl = GetYoutubeHaikuUrl();
+                    
+                    var haikuUrl = await RedditManager.GetYoutubeHaikuUrlAsync();
 
                     await haikuMsg.Edit(haikuMsg.Text + $": {haikuUrl.AbsoluteUri}");
 
@@ -464,18 +461,6 @@ namespace BundtBot.BundtBot {
                     
                 });*/
             #endregion
-        }
-
-        /// <summary>Get a youtube url from /r/youtubehaiku</summary>
-        static Uri GetYoutubeHaikuUrl() {
-            // Get top 50 posts of all time
-            var reddit = new Reddit();
-            var subreddit = reddit.GetSubreddit("/r/youtubehaiku");
-            var posts = subreddit.GetTop(FromTime.All).Take(50).ToList();
-            // Select a random post from those 50
-            var post = posts.GetRandom();
-            // Return the url
-            return post.Url;
         }
 
         static void WriteBundtBotASCIIArtToConsole() {
@@ -586,10 +571,12 @@ namespace BundtBot.BundtBot {
         async Task OnUserLeftVoiceChannel(ChannelUserEventArgs e) {
             if (e.Channel != _soundManager.VoiceChannel) return;
             if (e.Channel.Users.Count() > 1) return;
-            _soundManager.Stop();
-            await e.Channel.Server.DefaultChannel.SendMessage("sorry i bothered you with my 🎶");
+            if (_soundManager.CurrentlyPlayingSound.TextUpdates) {
+                await e.Channel.Server.DefaultChannel.SendMessage("sorry i bothered you with my 🎶");
+            }
             MyLogger.WriteLine("[Program] OnUserLeftVoiceChannel - Telling SoundManager to stop," +
                                " because we are the last user in channel");
+            _soundManager.Stop();
         }
 
         void OnUserJoinedVoiceChannel(ChannelUserEventArgs e) {

@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Threading.Tasks;
 using BundtBot.BundtBot.Utility;
@@ -6,6 +8,8 @@ using BundtBot.BundtBot.Utility;
 namespace BundtBot.BundtBot {
     class FFMPEG {
         public async Task<FileInfo> FFMPEGConvert(FileInfo outputPath) {
+            Contract.Requires<ArgumentNullException>(outputPath != null);
+            Contract.Requires<FileNotFoundException>(outputPath.Exists);
             var outputWAV = outputPath.FullName.Substring(0, outputPath.FullName.LastIndexOf('.')) + ".wav";
 
             var ffmpegProcess = new Process();

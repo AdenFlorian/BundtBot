@@ -1,4 +1,5 @@
 ﻿using System;
+using NString;
 
 namespace BundtBot.BundtBot.Utility {
     public static class MyLogger {
@@ -70,7 +71,10 @@ namespace BundtBot.BundtBot.Utility {
             Console.ReadKey(true);
         }
 
-        public static void WriteException(Exception exception) {
+        public static void WriteException(Exception exception, string messagePrefix = "") {
+            if (messagePrefix.IsNullOrWhiteSpace() == false) {
+                WriteLine(messagePrefix, ConsoleColor.Magenta);
+            }
             WriteLine(exception.Message, ConsoleColor.Red);
             WriteLine(exception.StackTrace, ConsoleColor.Red);
         }
