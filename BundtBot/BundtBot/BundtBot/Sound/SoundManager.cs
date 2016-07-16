@@ -44,7 +44,13 @@ namespace BundtBot.BundtBot.Sound {
                     var audioClient = await audioService.Join(sound.VoiceChannel);
                     VoiceChannel = sound.VoiceChannel;
                     if (sound.TextUpdates) {
-                        await sound.TextChannel.SendMessage($"Playing `{sound.SoundFile.GetTitleTag()}` at Volume **{sound.Volume * 10}**");
+                        var volumeOverride = _audioStreamer.GetVolumeOverride();
+                        if (volumeOverride > 0) {
+                            await sound.TextChannel.SendMessage($"Playing `{sound.SoundFile.GetTitleTag()}` at *Override Volume* **{volumeOverride}**");
+                        }
+                        else {
+                            await sound.TextChannel.SendMessage($"Playing `{sound.SoundFile.GetTitleTag()}` at Volume **{sound.Volume * 10}**");
+                        }
                     }
 
                     _audioStreamer.PlaySound(audioService, audioClient, sound);
@@ -92,9 +98,19 @@ namespace BundtBot.BundtBot.Sound {
             MyLogger.WriteLine("[SoundManager] Skipped");
         }
 
-        internal void SetVolume(float desiredVolume) {
-            _audioStreamer.SetVolume(desiredVolume);
+        internal void SetVolumeOfCurrentClip(float desiredVolume) {
+            _audioStreamer.SetVolumeOfCurrentClip(desiredVolume);
             MyLogger.WriteLine("[SoundManager] Volume set to " + desiredVolume);
+        }
+
+        internal void SetVolumeOverride(float desiredVolume) {
+            _audioStreamer.SetVolumeOverride(desiredVolume);
+            MyLogger.WriteLine("[SoundManager] Volume Override set to " + desiredVolume);
+        }
+
+        internal void ClearVolumeOverride() {
+            _audioStreamer.ClearVolumeOverride();
+            MyLogger.WriteLine("[SoundManager] Volume Override cleared");
         }
     }
 }

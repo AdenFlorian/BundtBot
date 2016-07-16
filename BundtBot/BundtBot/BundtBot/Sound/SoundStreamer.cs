@@ -10,13 +10,30 @@ namespace BundtBot.BundtBot.Sound {
         public volatile bool Stop;
 
         volatile float _volume;
+        volatile float _volumeOverride;
 
-        public void SetVolume(float newVolume) {
+        public void SetVolumeOfCurrentClip(float newVolume) {
             // Just an extra check to keep the bot from blowing people's ears out
             if (newVolume > 1.1f) {
                 throw new ArgumentException("Volume should never be greater than 1!");
             }
-            _volume = newVolume * 0.25f;
+            _volume = newVolume;
+        }
+
+        public float GetVolumeOverride() {
+            return _volumeOverride;
+        }
+
+        public void SetVolumeOverride(float newVolume) {
+            // Just an extra check to keep the bot from blowing people's ears out
+            if (newVolume > 1.1f) {
+                throw new ArgumentException("Volume should never be greater than 1!");
+            }
+            _volumeOverride = newVolume;
+        }
+
+        public void ClearVolumeOverride() {
+            _volumeOverride = -1;
         }
 
         public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
@@ -24,10 +41,10 @@ namespace BundtBot.BundtBot.Sound {
             var timePlayed = 0;
             var outFormat = new WaveFormat(48000, 16, channels);
 
-            SetVolume(sound.Volume);
+            SetVolumeOfCurrentClip(sound.Volume);
 
             using (var audioFileStream = new MediaFoundationReader(sound.SoundFile.FullName))
-            using (var waveChannel32 = new WaveChannel32(audioFileStream, _volume, 0f) { PadWithZeroes = false })
+            using (var waveChannel32 = new WaveChannel32(audioFileStream, (_volumeOverride > 0 ? _volumeOverride : _volume) * 0.2f, 0f) { PadWithZeroes = false })
             using (var effectStream = new EffectStream(waveChannel32))
             using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))
             using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat)) {
@@ -41,7 +58,7 @@ namespace BundtBot.BundtBot.Sound {
 
                 // Read audio into our buffer, and keep a loop open while data is present
                 while ((byteCount = resampler.Read(buffer, 0, blockSize)) > 0) {
-                    waveChannel32.Volume = _volume;
+                    waveChannel32.Volume = (_volumeOverride > 0 ? _volumeOverride : _volume) * 0.2f;
 
                     // Limit play length (--length)
                     timePlayed += byteCount * 1000 / outFormat.AverageBytesPerSecond;

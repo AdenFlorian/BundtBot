@@ -16,8 +16,6 @@ using Octokit;
 using BundtBot.BundtBot.Extensions;
 using BundtBot.BundtBot.Reddit;
 using Discord.Net;
-using RedditSharp;
-using RedditSharp.Things;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -220,7 +218,7 @@ namespace BundtBot.BundtBot {
                 .Do(async e => {
                     var msg = await e.Channel.SendMessage("okay...");
                     _soundManager.Stop();
-                    await msg.Edit(msg.Text + ":disappointed_relieved:");
+                    await msg.Edit(msg.Text + ":zipper_mouth:");
                 });
             commandService.CreateCommand("next")
                 .Alias("skip")
@@ -235,9 +233,9 @@ namespace BundtBot.BundtBot {
                         _soundManager.Skip();
                         await msg.Edit(msg.Text + " :stop_button:");
                     } else {
-                        var msg = await e.Channel.SendMessage("sure thing boss...");
+                        var msg = await e.Channel.SendMessage("standby...");
                         _soundManager.Skip();
-                        await msg.Edit(msg.Text + "is this what you wanted?");
+                        await msg.Edit(msg.Text + "Clip has been terminated, and it's parents have been notified. The next clip in line has taken its place. How do you sleep at night.");
                     }
                 });
             commandService.CreateCommand("sb")
@@ -399,7 +397,7 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var haikuMsg = await e.Channel.SendMessage($"☢HAIKU INCOMING☢");
+                    var haikuMsg = await e.Channel.SendMessage("☢HAIKU INCOMING☢");
                     
                     var haikuUrl = await RedditManager.GetYoutubeHaikuUrlAsync();
 
@@ -444,7 +442,21 @@ namespace BundtBot.BundtBot {
                 .Do(async e => {
                     try {
                         var desiredVolume = float.Parse(e.Args[0]) / 10f;
-                        _soundManager.SetVolume(desiredVolume);
+                        _soundManager.SetVolumeOverride(desiredVolume);
+                        await e.Channel.SendMessage($"global volume set to {desiredVolume * 10}");
+                    } catch (Exception) {
+                        await e.Channel.SendMessage("wat did u doo to dah volumez");
+                        throw;
+                    }
+                });
+            commandService.CreateCommand("tempvolume")
+                .Alias("tempvol", "voltemp", "🔉")
+                .Description("turn down fer wut (1 to 10, 1 being down, 10 being fer wut).")
+                .Parameter("desired volume")
+                .Do(async e => {
+                    try {
+                        var desiredVolume = float.Parse(e.Args[0]) / 10f;
+                        _soundManager.SetVolumeOfCurrentClip(desiredVolume);
                         await e.Channel.SendMessage("is dat betta?");
                     } catch (Exception) {
                         await e.Channel.SendMessage("wat did u doo to dah volumez");

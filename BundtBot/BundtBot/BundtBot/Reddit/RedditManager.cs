@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BundtBot.BundtBot.Extensions;
-using RedditSharp;
 using RedditSharp.Things;
 
 namespace BundtBot.BundtBot.Reddit {
