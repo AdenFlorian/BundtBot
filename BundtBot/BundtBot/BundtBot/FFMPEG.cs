@@ -16,7 +16,7 @@ namespace BundtBot.BundtBot {
 
             var startinfo = new ProcessStartInfo {
                 FileName = @"C:\Users\Bundt\Source\Repos\BundtBot\BundtBot\BundtBot\bin\Debug\ffmpeg.exe",
-                Arguments = "-i \"" + outputPath + "\" \"" + outputWAV + "\"",
+                Arguments = "-y -i \"" + outputPath + "\" \"" + outputWAV + "\"",
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true,
@@ -29,6 +29,8 @@ namespace BundtBot.BundtBot {
             ffmpegProcess.OutputDataReceived += (sender, ev) => {
                 MyLogger.WriteLine("%%FFMPEG%% " + ev.Data);
             };
+
+            Console.WriteLine("\n" + ffmpegProcess.StartInfo.FileName + " " + ffmpegProcess.StartInfo.Arguments + "\n");
 
             ffmpegProcess.Start();
             ffmpegProcess.BeginOutputReadLine();
