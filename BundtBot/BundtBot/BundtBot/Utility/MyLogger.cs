@@ -5,24 +5,22 @@ namespace BundtBot.BundtBot.Utility {
     public static class MyLogger {
 
         public static bool EnableTimestamps = false;
+        public static ConsoleColor DefaultColor = ConsoleColor.Gray;
 
         public static void Write(string message, ConsoleColor color) {
-            var startingColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
             Write(message);
-            Console.ForegroundColor = startingColor;
+            Console.ForegroundColor = DefaultColor;
         }
 
         public static void WriteLine(string message, ConsoleColor color) {
-            var startingColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
             WriteLine(message);
-            Console.ForegroundColor = startingColor;
+            Console.ForegroundColor = DefaultColor;
         }
 
         public static void WriteLineMultiColored(string message, bool randomSequence = false) {
             ConsoleColorHelper.ResetRoundRobinToStart();
-            var startingColor = Console.ForegroundColor;
 
             foreach (var item in message) {
                 if (item == '\n') {
@@ -43,7 +41,7 @@ namespace BundtBot.BundtBot.Utility {
             }
 
             NewLine();
-            Console.ForegroundColor = startingColor;
+            Console.ForegroundColor = DefaultColor;
         }
 
         public static void Write(string message) {

@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BundtBot.BundtBot;
+using BundtBot.BundtBot.Utility;
 
 namespace TestBot {
     [TestClass]

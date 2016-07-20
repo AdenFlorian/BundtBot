@@ -18,11 +18,11 @@ namespace BundtBot.BundtBot {
 
             var downloader = new AudioDownloader(urlToDownload, newFilename, mp3OutputFolder);
             downloader.ProgressDownload += async (sender, ev) => {
-                Console.WriteLine(ev.Percentage);
-                if (ev.Percentage > _lastPercentage + 50) {
-                    await _progressMessage.Edit("downloading: " + ev.Percentage);
+                MyLogger.WriteLine(ev.Percentage.ToString("0.0"), ConsoleColor.Green);
+                if (ev.Percentage > _lastPercentage + 25) {
+                    await _progressMessage.Edit("downloading: " + ev.Percentage.ToString("0") + "%");
+                    _lastPercentage = ev.Percentage;
                 }
-                _lastPercentage = ev.Percentage;
             };
             downloader.FinishedDownload += async (sender, ev) => {
                 Console.WriteLine("Finished Download!");

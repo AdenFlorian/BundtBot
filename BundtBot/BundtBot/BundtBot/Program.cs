@@ -14,8 +14,10 @@ using NString;
 using WrapYoutubeDl;
 using Octokit;
 using BundtBot.BundtBot.Extensions;
+using BundtBot.BundtBot.Models;
 using BundtBot.BundtBot.Reddit;
 using Discord.Net;
+using LiteDB;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -317,33 +319,64 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    await e.Channel.SendMessage("Searching youtube for: " + ytSearchString);
+                    AudioClip clip;
 
-                    // Get video id
-                    MyLogger.WriteLine("Getting youtube video id...");
-                    var youtubeVideoID = await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
-                    MyLogger.WriteLine("Youtube video ID get! " + youtubeVideoID, ConsoleColor.Green);
+                    // Check DB for clip where title matches search string
+                    // Open database (or create if not exits)
+                    using (var db = new LiteDatabase(@"MyData.db")) {
+                        // Get customer collection
+                        var searchStrings = db.GetCollection<YoutubeSearchString>("YoutubeSearchStrings");
+                        var clips = db.GetCollection<AudioClip>("AudioClips");
 
-                    // Get video name
-                    MyLogger.WriteLine("Getting youtube video title...");
-                    var youtubeVideoTitle = await new YoutubeVideoName().Get($"\"ytsearch1:{ytSearchString}\"");
-                    MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
-                    await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
+                        clips.EnsureIndex(x => x.Id);
+                        searchStrings.EnsureIndex(x => x.Text);
 
-                    // See if file exists
-                    var possibleSoundFile = new FileInfo(Mp3OutputFolder + youtubeVideoID + ".wav");
+                        var clipId = searchStrings.FindOne(x => x.Text == ytSearchString)?.AudioClipId;
+
+                        // Use Linq to query documents
+                        clip = clips.FindOne(x => x.Id == clipId);
+
+                        var allclips = clips.FindAll();
+                        foreach (var audioClip in allclips) {
+                            MyLogger.WriteLine(audioClip.ToString());
+                        }
+                        var allsearchstrings = searchStrings.FindAll();
+                        foreach (var searchstring in allsearchstrings) {
+                            MyLogger.WriteLine(searchstring.ToString());
+                        }
+                    }
 
                     FileInfo outputWAVFile;
 
-                    if (possibleSoundFile.Exists == false) {
+                    if (clip == null) {
+                        await e.Channel.SendMessage("Searching youtube for: " + ytSearchString);
+
+                        // Get video id
+                        MyLogger.WriteLine("Getting youtube video id...");
+                        var youtubeVideoID = await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
+                        MyLogger.WriteLine("Youtube video ID get! " + youtubeVideoID, ConsoleColor.Green);
+
+                        // Get video name
+                        MyLogger.WriteLine("Getting youtube video title...");
+                        var youtubeVideoTitle = await new YoutubeVideoName().Get($"\"ytsearch1:{ytSearchString}\"");
+                        MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
+                        await e.Channel.SendMessage("Found video: " + youtubeVideoTitle);
+                        
                         FileInfo youtubeOutput;
                         if (ytSearchString.Contains("youtube.com/watch?")) {
-                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString, Mp3OutputFolder);
-                        } else {
-                            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, $"\"ytsearch1:{ytSearchString}\"", Mp3OutputFolder);
+                            youtubeOutput =
+                                await
+                                    new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString,
+                                        Mp3OutputFolder);
+                        }
+                        else {
+                            youtubeOutput =
+                                await
+                                    new YoutubeDownloader().YoutubeDownloadAndConvert(e,
+                                        $"\"ytsearch1:{ytSearchString}\"", Mp3OutputFolder);
                         }
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
-                        outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
+                        outputWAVFile = await new FFMPEG().FFMPEGConvertAsync(youtubeOutput);
                         await msg.Edit(msg.Text + "finished!");
 
                         if (outputWAVFile.Exists == false) {
@@ -354,12 +387,35 @@ namespace BundtBot.BundtBot {
                         var taglibFile = TagLib.File.Create(outputWAVFile.FullName);
                         taglibFile.Tag.Title = youtubeVideoTitle;
                         taglibFile.Save();
-                    } else {
-                        MyLogger.WriteLine("WAV file exists already! " + possibleSoundFile.FullName, ConsoleColor.Green);
-                        outputWAVFile = possibleSoundFile;
-                        await e.Channel.SendMessage("Playing audio from cache...");
+                        using (var db = new LiteDatabase(@"MyData.db")) {
+                            // Get customer collection
+                            var clips = db.GetCollection<AudioClip>("AudioClips");
+                            AudioClip audioClip = null;
+                            clips.EnsureIndex(x => x.YoutubeID);
+                            audioClip = clips.FindOne(x => x.YoutubeID == youtubeVideoID);
+
+                            if (audioClip == null) {
+                                audioClip = new AudioClip {
+                                    Title = youtubeVideoTitle,
+                                    Path = outputWAVFile.FullName,
+                                    YoutubeID = youtubeVideoID
+                                };
+                                audioClip = clips.FindById(clips.Insert(audioClip));
+                            }
+
+                            var searchStrings = db.GetCollection<YoutubeSearchString>("YoutubeSearchStrings");
+                            if (searchStrings.Exists(x => x.Text == ytSearchString) == false) {
+                                searchStrings.Insert(new YoutubeSearchString {
+                                    Text = ytSearchString,
+                                    AudioClipId = audioClip.Id
+                                });
+                            }
+                        }
                     }
-                    
+                    else {
+                        outputWAVFile = new FileInfo(clip.Path);
+                    }
+
                     var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
                         DeleteAfterPlay = false
                     };
@@ -405,7 +461,7 @@ namespace BundtBot.BundtBot {
 
                     var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, haikuUrl.AbsoluteUri, Mp3OutputFolder);
                     var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
-                    var outputWAVFile = await new FFMPEG().FFMPEGConvert(youtubeOutput);
+                    var outputWAVFile = await new FFMPEG().FFMPEGConvertAsync(youtubeOutput);
                     await msg.Edit(msg.Text + "finished!");
 
                     if (outputWAVFile.Exists == false) {
