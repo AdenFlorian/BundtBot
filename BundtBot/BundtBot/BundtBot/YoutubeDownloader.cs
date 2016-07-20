@@ -12,7 +12,7 @@ namespace BundtBot.BundtBot {
         Message _progressMessage;
         decimal _lastPercentage;
 
-        public async Task<FileInfo> YoutubeDownloadAndConvert(CommandEventArgs e, string ytSearchString, string mp3OutputFolder) {
+        public async Task<FileInfo> YoutubeDownloadAndConvertAsync(CommandEventArgs e, string ytSearchString, string mp3OutputFolder) {
             var urlToDownload = ytSearchString;
             var newFilename = Guid.NewGuid().ToString();
 

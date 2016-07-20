@@ -366,13 +366,13 @@ namespace BundtBot.BundtBot {
                         if (ytSearchString.Contains("youtube.com/watch?")) {
                             youtubeOutput =
                                 await
-                                    new YoutubeDownloader().YoutubeDownloadAndConvert(e, ytSearchString,
+                                    new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, ytSearchString,
                                         Mp3OutputFolder);
                         }
                         else {
                             youtubeOutput =
                                 await
-                                    new YoutubeDownloader().YoutubeDownloadAndConvert(e,
+                                    new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e,
                                         $"\"ytsearch1:{ytSearchString}\"", Mp3OutputFolder);
                         }
                         var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
@@ -459,7 +459,7 @@ namespace BundtBot.BundtBot {
 
                     await haikuMsg.Edit(haikuMsg.Text + $": {haikuUrl.AbsoluteUri}");
 
-                    var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvert(e, haikuUrl.AbsoluteUri, Mp3OutputFolder);
+                    var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, haikuUrl.AbsoluteUri, Mp3OutputFolder);
                     var msg = await e.Channel.SendMessage("Download finished! Converting audio...");
                     var outputWAVFile = await new FFMPEG().FFMPEGConvertAsync(youtubeOutput);
                     await msg.Edit(msg.Text + "finished!");
