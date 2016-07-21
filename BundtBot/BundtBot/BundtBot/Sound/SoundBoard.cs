@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BundtBot.BundtBot.Utility;
+using NString;
 
 namespace BundtBot.BundtBot.Sound {
     class SoundBoard {
@@ -99,8 +100,8 @@ namespace BundtBot.BundtBot.Sound {
             var words = new List<string>(actorAndSoundString.Trim().Split(' '));
 
             // ReSharper disable once ConvertIfStatementToSwitchStatement
-            if (words.Count == 0) {
-                words.Add("#random");
+            if (words.Count == 1 && words[0].IsNullOrWhiteSpace()) {
+                words[0] = "#random";
                 words.Add("#random");
             } else if (words.Count == 1) {
                 words.Add("#random");

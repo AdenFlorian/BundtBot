@@ -2,6 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.IO;
 using Discord;
+using NString;
 
 namespace BundtBot.BundtBot.Sound {
     /// <summary>
@@ -15,6 +16,7 @@ namespace BundtBot.BundtBot.Sound {
         public Channel TextChannel { get; }
         /// <summary>The voice channel to play the sound in.</summary>
         public Channel VoiceChannel { get; private set; }
+        public string Name { get; private set; }
         #endregion
 
         #region Optional
@@ -32,20 +34,23 @@ namespace BundtBot.BundtBot.Sound {
         /// <summary>Determines whether updates about this sound should be sent to TextChannel</summary>
         public bool TextUpdates = true;
         #endregion
-        
+
         /// <param name="soundFile">Must not be null</param>
         /// <param name="textChannel">Must not be null</param>
         /// <param name="voiceChannel">Must not be null</param>
-        public Sound(FileInfo soundFile, Channel textChannel, Channel voiceChannel) {
+        /// <param name="name">Name of sound</param>
+        public Sound(FileInfo soundFile, Channel textChannel, Channel voiceChannel, string name) {
             Contract.Requires<ArgumentNullException>(soundFile != null);
             Contract.Requires<FileNotFoundException>(soundFile.Exists);
             Contract.Requires<ArgumentNullException>(textChannel != null);
             Contract.Requires<ArgumentException>(textChannel.Type == ChannelType.Text);
             Contract.Requires<ArgumentNullException>(voiceChannel != null);
             Contract.Requires<ArgumentException>(voiceChannel.Type == ChannelType.Voice);
+            Contract.Requires<ArgumentException>(name.IsNullOrWhiteSpace() == false, "Sound name must not be null or whitespace");
             SoundFile = soundFile;
             TextChannel = textChannel;
             VoiceChannel = voiceChannel;
+            Name = name;
         }
     }
 }

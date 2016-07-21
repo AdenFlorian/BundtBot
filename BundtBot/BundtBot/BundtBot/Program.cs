@@ -274,7 +274,7 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var sound = new Sound.Sound(soundFile, e.Channel, e.User.VoiceChannel);
+                    var sound = new Sound.Sound(soundFile, e.Channel, e.User.VoiceChannel, $"{soundFile.Directory.Name}: {soundFile.Name}");
 
                     try {
                         if (args.Count > 0) {
@@ -284,8 +284,6 @@ namespace BundtBot.BundtBot {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
                         return;
                     }
-                    
-                    sound.SoundFile.SetTitleTag(sound.SoundFile.Name.Substring(0, sound.SoundFile.Name.Length - 4));
 
                     _soundManager.EnqueueSound(sound);
                 });
@@ -336,14 +334,14 @@ namespace BundtBot.BundtBot {
                         // Use Linq to query documents
                         clip = clips.FindOne(x => x.Id == clipId);
 
-                        var allclips = clips.FindAll();
-                        foreach (var audioClip in allclips) {
-                            MyLogger.WriteLine(audioClip.ToString());
-                        }
-                        var allsearchstrings = searchStrings.FindAll();
-                        foreach (var searchstring in allsearchstrings) {
-                            MyLogger.WriteLine(searchstring.ToString());
-                        }
+                        //var allclips = clips.FindAll();
+                        //foreach (var audioClip in allclips) {
+                        //    MyLogger.WriteLine(audioClip.ToString());
+                        //}
+                        //var allsearchstrings = searchStrings.FindAll();
+                        //foreach (var searchstring in allsearchstrings) {
+                        //    MyLogger.WriteLine(searchstring.ToString());
+                        //}
                     }
 
                     FileInfo outputWAVFile;
@@ -383,31 +381,28 @@ namespace BundtBot.BundtBot {
                             await e.Channel.SendMessage("that video doesn't work, sorry, try something else");
                             return;
                         }
-
-                        var taglibFile = TagLib.File.Create(outputWAVFile.FullName);
-                        taglibFile.Tag.Title = youtubeVideoTitle;
-                        taglibFile.Save();
+                        
                         using (var db = new LiteDatabase(@"MyData.db")) {
                             // Get customer collection
                             var clips = db.GetCollection<AudioClip>("AudioClips");
-                            AudioClip audioClip = null;
+                            clip = null;
                             clips.EnsureIndex(x => x.YoutubeID);
-                            audioClip = clips.FindOne(x => x.YoutubeID == youtubeVideoID);
+                            clip = clips.FindOne(x => x.YoutubeID == youtubeVideoID);
 
-                            if (audioClip == null) {
-                                audioClip = new AudioClip {
+                            if (clip == null) {
+                                clip = new AudioClip {
                                     Title = youtubeVideoTitle,
                                     Path = outputWAVFile.FullName,
                                     YoutubeID = youtubeVideoID
                                 };
-                                audioClip = clips.FindById(clips.Insert(audioClip));
+                                clip = clips.FindById(clips.Insert(clip));
                             }
 
                             var searchStrings = db.GetCollection<YoutubeSearchString>("YoutubeSearchStrings");
                             if (searchStrings.Exists(x => x.Text == ytSearchString) == false) {
                                 searchStrings.Insert(new YoutubeSearchString {
                                     Text = ytSearchString,
-                                    AudioClipId = audioClip.Id
+                                    AudioClipId = clip.Id
                                 });
                             }
                         }
@@ -416,7 +411,7 @@ namespace BundtBot.BundtBot {
                         outputWAVFile = new FileInfo(clip.Path);
                     }
 
-                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
+                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel, clip.Title) {
                         DeleteAfterPlay = false
                     };
 
@@ -470,12 +465,8 @@ namespace BundtBot.BundtBot {
                     }
 
                     var youtubeVideoTitle = await new YoutubeVideoName().Get(haikuUrl.AbsoluteUri);
-
-                    var taglibFile = TagLib.File.Create(outputWAVFile.FullName);
-                    taglibFile.Tag.Title = youtubeVideoTitle;
-                    taglibFile.Save();
                     
-                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel) {
+                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel, youtubeVideoTitle) {
                         DeleteAfterPlay = true
                     };
 
@@ -677,7 +668,7 @@ namespace BundtBot.BundtBot {
                 MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
                 return;
             }
-            var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel) {TextUpdates = false};
+            var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel, $"{x.Item1}: {x.Item2}") {TextUpdates = false};
             _soundManager.EnqueueSound(sound);
         }
     }
