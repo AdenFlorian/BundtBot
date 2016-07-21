@@ -274,7 +274,7 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var sound = new Sound.Sound(soundFile, e.Channel, e.User.VoiceChannel, $"{soundFile.Directory.Name}: {soundFile.Name}");
+                    var sound = new Sound.Sound(soundFile, e.Channel, e.User.VoiceChannel, $"{soundFile.Directory?.Name}: {soundFile.Name}");
 
                     try {
                         if (args.Count > 0) {
