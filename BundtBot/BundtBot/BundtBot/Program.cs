@@ -241,7 +241,6 @@ namespace BundtBot.BundtBot {
                     }
                 });
             commandService.CreateCommand("sb")
-                .AddCheck((c, u, x) => u.VoiceChannel != null, Constants.NotInVoice)
                 .Alias("owsb")
                 .Description("Sound board. It plays sounds with its mouth.")
                 .Parameter("sound args", ParameterType.Unparsed)
@@ -259,6 +258,11 @@ namespace BundtBot.BundtBot {
                         args = SoundBoard.ExtractArgs(ref actorAndSoundString);
                     } catch (Exception ex) {
                         await e.Channel.SendMessage($"you're doing it wrong ({ex.Message})");
+                        return;
+                    }
+
+                    if (e.User.VoiceChannel == null) {
+                        await e.Channel.SendMessage(Constants.NotInVoice);
                         return;
                     }
 
@@ -313,7 +317,7 @@ namespace BundtBot.BundtBot {
                     var voiceChannel = e.User.VoiceChannel;
 
                     if (voiceChannel == null) {
-                        await e.Channel.SendMessage("you need to be in a voice channel to hear me roar");
+                        await e.Channel.SendMessage(Constants.NotInVoice);
                         return;
                     }
 

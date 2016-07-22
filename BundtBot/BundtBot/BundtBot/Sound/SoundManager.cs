@@ -46,7 +46,7 @@ namespace BundtBot.BundtBot.Sound {
                     if (sound.TextUpdates) {
                         var volumeOverride = _audioStreamer.GetVolumeOverride();
                         if (volumeOverride > 0) {
-                            await sound.TextChannel.SendMessage($"Playing `{sound.Name}` at *Override Volume* **{volumeOverride}**");
+                            await sound.TextChannel.SendMessage($"Playing `{sound.Name}` at *Override Volume* **{volumeOverride * 10}**");
                         }
                         else {
                             await sound.TextChannel.SendMessage($"Playing `{sound.Name}` at Volume **{sound.Volume * 10}**");
