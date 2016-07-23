@@ -43,7 +43,7 @@ namespace BundtBot.BundtBot.Sound {
 
             SetVolumeOfCurrentClip(sound.Volume);
 
-            using (var audioFileStream = new MediaFoundationReader(sound.SoundFile.FullName))
+            using (var audioFileStream = new MediaFoundationReader(sound.AudioClip.Path))
             using (var waveChannel32 = new WaveChannel32(audioFileStream, (_volumeOverride > 0 ? _volumeOverride : _volume) * 0.2f, 0f) { PadWithZeroes = false })
             using (var effectStream = new EffectStream(waveChannel32))
             using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))

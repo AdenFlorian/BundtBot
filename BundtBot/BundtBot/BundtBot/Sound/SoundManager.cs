@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Threading;
 using BundtBot.BundtBot.Extensions;
 using BundtBot.BundtBot.Utility;
@@ -46,18 +47,18 @@ namespace BundtBot.BundtBot.Sound {
                     if (sound.TextUpdates) {
                         var volumeOverride = _audioStreamer.GetVolumeOverride();
                         if (volumeOverride > 0) {
-                            await sound.TextChannel.SendMessage($"Playing `{sound.Name}` at *Override Volume* **{volumeOverride * 10}**");
+                            await sound.TextChannel.SendMessage($"Playing `{sound.AudioClip.Title}` at *Override Volume* **{volumeOverride * 10}**");
                         }
                         else {
-                            await sound.TextChannel.SendMessage($"Playing `{sound.Name}` at Volume **{sound.Volume * 10}**");
+                            await sound.TextChannel.SendMessage($"Playing `{sound.AudioClip.Title}` at Volume **{sound.Volume * 10}**");
                         }
                     }
 
                     _audioStreamer.PlaySound(audioService, audioClient, sound);
 
                     if (sound.DeleteAfterPlay) {
-                        MyLogger.WriteLine("Deleting sound file: " + sound.SoundFile, ConsoleColor.Yellow);
-                        sound.SoundFile.Delete();
+                        MyLogger.WriteLine("Deleting sound file: " + sound.AudioClip, ConsoleColor.Yellow);
+                        File.Delete(sound.AudioClip.Path);
                     }
 
                     // Check if next sound is in same channel
@@ -81,7 +82,7 @@ namespace BundtBot.BundtBot.Sound {
                 msg = await sound.TextChannel.SendMessage("Adding sound to the queue...");
             }
             _soundQueue.Enqueue(sound);
-            MyLogger.WriteLine("[SoundManager] Sound queued: " + sound.SoundFile.Name);
+            MyLogger.WriteLine("[SoundManager] Sound queued: " + sound.AudioClip.Title);
             if (sound.TextUpdates && msg != null) {
                 await msg.Edit(msg.Text + "done!");
             }

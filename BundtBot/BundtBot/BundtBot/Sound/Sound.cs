@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using System.IO;
+using BundtBot.BundtBot.Models;
 using Discord;
 using NString;
 
@@ -11,12 +12,11 @@ namespace BundtBot.BundtBot.Sound {
     class Sound {
         #region Required
         /// <summary>The absolute path to the sound file on the local file system.</summary>
-        public FileInfo SoundFile { get; private set; }
+        public AudioClip AudioClip { get; private set; }
         /// <summary>The text channel to send messages to.</summary>
         public Channel TextChannel { get; }
         /// <summary>The voice channel to play the sound in.</summary>
         public Channel VoiceChannel { get; private set; }
-        public string Name { get; private set; }
         #endregion
 
         #region Optional
@@ -35,22 +35,19 @@ namespace BundtBot.BundtBot.Sound {
         public bool TextUpdates = true;
         #endregion
 
-        /// <param name="soundFile">Must not be null</param>
+        /// <param name="audioClip">Must not be null</param>
         /// <param name="textChannel">Must not be null</param>
         /// <param name="voiceChannel">Must not be null</param>
-        /// <param name="name">Name of sound</param>
-        public Sound(FileInfo soundFile, Channel textChannel, Channel voiceChannel, string name) {
-            Contract.Requires<ArgumentNullException>(soundFile != null);
-            Contract.Requires<FileNotFoundException>(soundFile.Exists);
+        public Sound(AudioClip audioClip, Channel textChannel, Channel voiceChannel) {
+            Contract.Requires<ArgumentNullException>(audioClip != null);
+            Contract.Requires<FileNotFoundException>(File.Exists(audioClip.Path), "AudioClip.Path must point to a file that exists");
             Contract.Requires<ArgumentNullException>(textChannel != null);
             Contract.Requires<ArgumentException>(textChannel.Type == ChannelType.Text);
             Contract.Requires<ArgumentNullException>(voiceChannel != null);
             Contract.Requires<ArgumentException>(voiceChannel.Type == ChannelType.Voice);
-            Contract.Requires<ArgumentException>(name.IsNullOrWhiteSpace() == false, "Sound name must not be null or whitespace");
-            SoundFile = soundFile;
+            AudioClip = audioClip;
             TextChannel = textChannel;
             VoiceChannel = voiceChannel;
-            Name = name;
         }
     }
 }

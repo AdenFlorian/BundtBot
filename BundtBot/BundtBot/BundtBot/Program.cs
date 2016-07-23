@@ -240,6 +240,22 @@ namespace BundtBot.BundtBot {
                         await msg.Edit(msg.Text + "Clip has been terminated, and it's parents have been notified. The next clip in line has taken its place. How do you sleep at night.");
                     }
                 });
+            commandService.CreateCommand("like")
+                .Alias("thumbsup", "upvote", "👍")
+                .Description("bundtbot for president 2020")
+                .Do(e => {
+                    // Find out what song is playing
+                    var currentSound = _soundManager.CurrentlyPlayingSound;
+                    
+                    using (var db = new LiteDatabase(@"MyData.db")) {
+                        // Get customer collection
+                        var clips = db.GetCollection<AudioClip>("AudioClips");
+                        var clip = clips.FindOne(x => x.Title == currentSound.AudioClip.Title);
+                        clip.Likes++;
+                        clips.Update(clip);
+                        e.Channel.SendMessage($"{clip.Title} has now been liked {clip.Likes} times, good for it");
+                    }
+                });
             commandService.CreateCommand("sb")
                 .Alias("owsb")
                 .Description("Sound board. It plays sounds with its mouth.")
@@ -278,7 +294,12 @@ namespace BundtBot.BundtBot {
                         return;
                     }
 
-                    var sound = new Sound.Sound(soundFile, e.Channel, e.User.VoiceChannel, $"{soundFile.Directory?.Name}: {soundFile.Name}");
+                    var audioClip = new AudioClip {
+                        Path = soundFile.FullName,
+                        Title = $"{soundFile.Directory?.Name}: {soundFile.Name}"
+                    };
+
+                    var sound = new Sound.Sound(audioClip, e.Channel, e.User.VoiceChannel);
 
                     try {
                         if (args.Count > 0) {
@@ -334,18 +355,8 @@ namespace BundtBot.BundtBot {
                         searchStrings.EnsureIndex(x => x.Text);
 
                         var clipId = searchStrings.FindOne(x => x.Text == ytSearchString)?.AudioClipId;
-
-                        // Use Linq to query documents
+                        
                         clip = clips.FindOne(x => x.Id == clipId);
-
-                        //var allclips = clips.FindAll();
-                        //foreach (var audioClip in allclips) {
-                        //    MyLogger.WriteLine(audioClip.ToString());
-                        //}
-                        //var allsearchstrings = searchStrings.FindAll();
-                        //foreach (var searchstring in allsearchstrings) {
-                        //    MyLogger.WriteLine(searchstring.ToString());
-                        //}
                     }
 
                     FileInfo outputWAVFile;
@@ -387,9 +398,7 @@ namespace BundtBot.BundtBot {
                         }
                         
                         using (var db = new LiteDatabase(@"MyData.db")) {
-                            // Get customer collection
                             var clips = db.GetCollection<AudioClip>("AudioClips");
-                            clip = null;
                             clips.EnsureIndex(x => x.YoutubeID);
                             clip = clips.FindOne(x => x.YoutubeID == youtubeVideoID);
 
@@ -411,11 +420,8 @@ namespace BundtBot.BundtBot {
                             }
                         }
                     }
-                    else {
-                        outputWAVFile = new FileInfo(clip.Path);
-                    }
 
-                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel, clip.Title) {
+                    var sound = new Sound.Sound(clip, e.Channel, voiceChannel) {
                         DeleteAfterPlay = false
                     };
 
@@ -469,8 +475,13 @@ namespace BundtBot.BundtBot {
                     }
 
                     var youtubeVideoTitle = await new YoutubeVideoName().Get(haikuUrl.AbsoluteUri);
-                    
-                    var sound = new Sound.Sound(outputWAVFile, e.Channel, voiceChannel, youtubeVideoTitle) {
+
+                    var clip = new AudioClip {
+                        Title = youtubeVideoTitle,
+                        Path = outputWAVFile.FullName
+                    };
+
+                    var sound = new Sound.Sound(clip, e.Channel, voiceChannel) {
                         DeleteAfterPlay = true
                     };
 
@@ -672,7 +683,13 @@ namespace BundtBot.BundtBot {
                 MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
                 return;
             }
-            var sound = new Sound.Sound(soundFile, e.Channel.Server.DefaultChannel, e.Channel, $"{x.Item1}: {x.Item2}") {TextUpdates = false};
+
+            var audioClip = new AudioClip {
+                Path = soundFile.FullName,
+                Title = $"{x.Item1}: {x.Item2}"
+            };
+
+            var sound = new Sound.Sound(audioClip, e.Channel.Server.DefaultChannel, e.Channel) {TextUpdates = false};
             _soundManager.EnqueueSound(sound);
         }
     }
