@@ -62,7 +62,7 @@ namespace BundtBot.BundtBot.Sound {
 
                     // Limit play length (--length)
                     timePlayed += byteCount * 1000 / outFormat.AverageBytesPerSecond;
-                    if (sound.Length > 0 && timePlayed > sound.Length) {
+                    if (sound.TimeLimit > 0 && timePlayed > sound.TimeLimit) {
                         break;
                     }
 

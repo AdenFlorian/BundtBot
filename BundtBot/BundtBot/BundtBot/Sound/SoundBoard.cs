@@ -46,14 +46,14 @@ namespace BundtBot.BundtBot.Sound {
                 if (arg.StartsWith("--length:") &&
                     arg.Length > 9) {
                     try {
-                        sound.Length = (int)(float.Parse(arg.Substring(9)) * 1000);
+                        sound.TimeLimit = (int)(float.Parse(arg.Substring(9)) * 1000);
                     } catch (Exception) {
                         throw new ArgumentException("badly formed length value");
                     }
-                    if (sound.Length <= 0) {
+                    if (sound.TimeLimit <= 0) {
                         throw new ArgumentException("invalid length value, must be a positive foat");
                     }
-                    MyLogger.WriteLine("Parsed " + arg + " into " + sound.Length + " milliseconds");
+                    MyLogger.WriteLine("Parsed " + arg + " into " + sound.TimeLimit + " milliseconds");
                 } else if ((arg.StartsWith("--volume:") &&
                     arg.Length > 9) ||
                     (arg.StartsWith("--vol:") &&

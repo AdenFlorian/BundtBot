@@ -29,8 +29,8 @@ namespace BundtBot.BundtBot.Sound {
         public float EchoFactor = 0;
         /// <summary>(0, 1.1f]</summary>
         public float Volume = 1f;
-        /// <summary>Length of sound in milliseconds.</summary>
-        public int Length = 0;
+        /// <summary>TimeLimit of sound in milliseconds.</summary>
+        public int TimeLimit = 0;
         /// <summary>Determines whether updates about this sound should be sent to TextChannel</summary>
         public bool TextUpdates = true;
         #endregion

@@ -79,7 +79,7 @@ namespace BundtBot.BundtBot.Sound {
         public async void EnqueueSound(Sound sound) {
             Message msg = null;
             if (sound.TextUpdates) {
-                msg = await sound.TextChannel.SendMessageEx("Adding sound to the queue...");
+                msg = await sound.TextChannel.SendMessageEx($"Adding **{sound.AudioClip.Title}** to the queue...");
             }
             _soundQueue.Enqueue(sound);
             MyLogger.WriteLine("[SoundManager] Sound queued: " + sound.AudioClip.Title);

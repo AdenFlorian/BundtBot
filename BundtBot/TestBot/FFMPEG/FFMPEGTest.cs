@@ -29,7 +29,7 @@ namespace TestBot.FFMPEG {
             var fileInfo = new FileInfo(_tempFolder.FullName + "/" + _testOpusFile.Name);
             _testOpusFile.CopyTo(fileInfo.FullName, true);
             var ffmpeg = new BundtBot.BundtBot.FFMPEG();
-            await ffmpeg.FFMPEGConvertAsync(fileInfo);
+            await ffmpeg.FFMPEGConvertToWAVAsync(fileInfo);
             Assert.IsTrue(File.Exists(_tempFolder.FullName + "/test.wav"));
         }
     }

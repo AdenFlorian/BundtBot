@@ -5,9 +5,8 @@ using BundtBot.BundtBot.Extensions;
 using BundtBot.BundtBot.Utility;
 using Discord;
 using Discord.Commands;
-using WrapYoutubeDl;
 
-namespace BundtBot.BundtBot {
+namespace BundtBot.BundtBot.Youtube {
     class YoutubeDownloader {
 
         Message _progressMessage;
