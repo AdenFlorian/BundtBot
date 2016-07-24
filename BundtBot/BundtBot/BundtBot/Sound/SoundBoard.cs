@@ -170,7 +170,7 @@ namespace BundtBot.BundtBot.Sound {
             }
 
             if (bestScore > 0) {
-                //textChannel.SendMessage("i think you meant " + matchedCategory);
+                //textChannel.SendMessageEx("i think you meant " + matchedCategory);
             }
 
             actorName = matchedCategory;
@@ -223,7 +223,7 @@ namespace BundtBot.BundtBot.Sound {
             }
 
             if (bestScore > 0) {
-                //textChannel.SendMessage("i think you meant " + matchedSound);
+                //textChannel.SendMessageEx("i think you meant " + matchedSound);
             }
 
             soundName = matchedSound;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using BundtBot.BundtBot.Extensions;
 using BundtBot.BundtBot.Utility;
 using Discord;
 using Discord.Commands;
@@ -31,14 +32,14 @@ namespace BundtBot.BundtBot {
             downloader.ErrorDownload += downloader_ErrorDownload;
             downloader.StartedDownload += downloader_StartedDownload;
 
-            _progressMessage = await e.Channel.SendMessage("downloading");
+            _progressMessage = await e.Channel.SendMessageEx("downloading");
             FileInfo outputPath;
             try {
                 outputPath = downloader.Download();
             }
             catch (Exception) {
                 MyLogger.WriteLine("downloader.Download(); threw an exception :( possibly to big filesize", ConsoleColor.Yellow);
-                await e.Channel.SendMessage("ummm...bad news...something broke...the video was probably too big to download, so try somethin else, k?");
+                await e.Channel.SendMessageEx("ummm...bad news...something broke...the video was probably too big to download, so try somethin else, k?");
                 throw;
             }
             Console.WriteLine("downloader.Download() Finished! " + outputPath);

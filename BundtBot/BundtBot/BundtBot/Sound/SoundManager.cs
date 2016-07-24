@@ -47,10 +47,10 @@ namespace BundtBot.BundtBot.Sound {
                     if (sound.TextUpdates) {
                         var volumeOverride = _audioStreamer.GetVolumeOverride();
                         if (volumeOverride > 0) {
-                            await sound.TextChannel.SendMessage($"Playing `{sound.AudioClip.Title}` at *Override Volume* **{volumeOverride * 10}**");
+                            await sound.TextChannel.SendMessageEx($"Playing `{sound.AudioClip.Title}` at *Override Volume* **{volumeOverride * 10}**");
                         }
                         else {
-                            await sound.TextChannel.SendMessage($"Playing `{sound.AudioClip.Title}` at Volume **{sound.Volume * 10}**");
+                            await sound.TextChannel.SendMessageEx($"Playing `{sound.AudioClip.Title}` at Volume **{sound.Volume * 10}**");
                         }
                     }
 
@@ -79,7 +79,7 @@ namespace BundtBot.BundtBot.Sound {
         public async void EnqueueSound(Sound sound) {
             Message msg = null;
             if (sound.TextUpdates) {
-                msg = await sound.TextChannel.SendMessage("Adding sound to the queue...");
+                msg = await sound.TextChannel.SendMessageEx("Adding sound to the queue...");
             }
             _soundQueue.Enqueue(sound);
             MyLogger.WriteLine("[SoundManager] Sound queued: " + sound.AudioClip.Title);

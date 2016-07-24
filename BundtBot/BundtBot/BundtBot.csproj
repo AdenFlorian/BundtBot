@@ -167,6 +167,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BundtBot\Extensions\ChannelExtensions.cs" />
     <Compile Include="BundtBot\Extensions\DiscordNetExtensions.cs" />
     <Compile Include="BundtBot\Extensions\FileInfoExtensions.cs" />
     <Compile Include="BundtBot\Extensions\ListExtensions.cs" />
