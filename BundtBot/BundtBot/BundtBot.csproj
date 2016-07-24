@@ -152,6 +152,7 @@
     </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Net" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web.Extensions" />
@@ -167,7 +168,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BundtBot\Commands\YoutubeCommand.cs" />
     <Compile Include="BundtBot\Youtube\AudioDownloader.cs" />
     <Compile Include="BundtBot\Extensions\ChannelExtensions.cs" />
     <Compile Include="BundtBot\Extensions\DiscordNetExtensions.cs" />
@@ -250,6 +250,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="BundtBot\Commands\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

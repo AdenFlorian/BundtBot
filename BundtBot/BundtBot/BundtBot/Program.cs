@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using BundtBot.BundtBot.Sound;
 using BundtBot.BundtBot.Utility;
 using Discord;
@@ -38,6 +39,8 @@ namespace BundtBot.BundtBot {
         void Start() {
             // Allows stuff like ʘ ͜ʖ ʘ to show in the Console
             Console.OutputEncoding = Encoding.UTF8;
+            Console.WindowHeight = (int)(Console.LargestWindowHeight * 0.9);
+            Console.WindowTop = 0;
 
             // Load Bot Token
             string botToken;
