@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using BundtBot.BundtBot.Database;
 using BundtBot.BundtBot.Sound;
 using BundtBot.BundtBot.Utility;
 using Discord;
@@ -19,6 +19,7 @@ using BundtBot.BundtBot.Reddit;
 using BundtBot.BundtBot.Youtube;
 using Discord.Net;
 using LiteDB;
+using User = BundtBot.BundtBot.Models.User;
 
 namespace BundtBot.BundtBot {
     class Program {
@@ -39,7 +40,7 @@ namespace BundtBot.BundtBot {
         void Start() {
             // Allows stuff like ʘ ͜ʖ ʘ to show in the Console
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WindowHeight = (int)(Console.LargestWindowHeight * 0.9);
+            Console.WindowHeight = (int) (Console.LargestWindowHeight * 0.9);
             Console.WindowTop = 0;
 
             // Load Bot Token
@@ -47,12 +48,13 @@ namespace BundtBot.BundtBot {
 
             try {
                 botToken = LoadBotToken();
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 MyLogger.WriteException(ex);
                 MyLogger.WriteExitMessageAndReadKey();
                 return;
             }
-            
+
             const string versionPath = "version.txt";
             if (File.Exists(versionPath)) {
                 var versionFloat = float.Parse(File.ReadAllText(versionPath));
@@ -93,37 +95,43 @@ namespace BundtBot.BundtBot {
                         await _client.Connect(botToken);
                     });
                     //break;
-                } catch (Exception ex) {
+                }
+                catch (Exception ex) {
                     MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
                     MyLogger.WriteException(ex);
                 }
             }
-            
+
         }
 
         void SetupCommands() {
             var commandService = _client.GetService<CommandService>();
 
             #region CommandEvents
+
             commandService.CommandErrored += async (s, e) => {
                 if (e.Exception == null) return;
                 MyLogger.WriteException(e.Exception, "[CommandErrored]");
-                await e.Channel.SendMessageEx($"bundtbot is brokebot, something broke while processing someone's `{e.Command.Text}` command :(");
+                await
+                    e.Channel.SendMessageEx(
+                        $"bundtbot is brokebot, something broke while processing someone's `{e.Command.Text}` command :(");
             };
             commandService.CommandExecuted += (s, e) => {
                 MyLogger.WriteLine("[CommandExecuted] " + e.Command.Text, ConsoleColor.DarkCyan);
             };
+
             #endregion
 
             #region boring commands
+
             commandService.CreateCommand("credits")
                 .Description("Prints who made this thing.")
                 .Do(async e => {
                     await e.Channel.SendMessageEx("!owsb <character name> <phrase>"
-                        + "\n!yt <youtube search string>"
-                        + "\ncreated by @AdenFlorian"
-                        + "\nhttps://github.com/AdenFlorian/DiscordSharp_Starter"
-                        + "\nhttps://trello.com/b/VKqUgzwV/bundtbot#");
+                                                  + "\n!yt <youtube search string>"
+                                                  + "\ncreated by @AdenFlorian"
+                                                  + "\nhttps://github.com/AdenFlorian/DiscordSharp_Starter"
+                                                  + "\nhttps://trello.com/b/VKqUgzwV/bundtbot#");
                 });
             commandService.CreateCommand("github")
                 .Alias("git", "🐙 🐱", "🐙🐱")
@@ -150,7 +158,9 @@ namespace BundtBot.BundtBot {
                     var xx = numOfCommitsToPull.ToString().Select(x => x.ToString()).ToList();
                     var numberEmojiString = "";
                     xx.ForEach(num => numberEmojiString += ":" + int.Parse(num).ToVerbal() + ":");
-                    await e.Channel.SendMessageEx($"Last {numberEmojiString} commits from `AdenFlorian/BundtBot` on github:");
+                    await
+                        e.Channel.SendMessageEx(
+                            $"Last {numberEmojiString} commits from `AdenFlorian/BundtBot` on github:");
                     await e.Channel.SendMessageEx(msg);
                 });
             commandService.CreateCommand("cat")
@@ -172,7 +182,8 @@ namespace BundtBot.BundtBot {
                     string msg;
                     if (e.User.ServerPermissions.Administrator) {
                         msg = "Yes, you are! ┌( ಠ‿ಠ)┘";
-                    } else {
+                    }
+                    else {
                         msg = "No, you aren't (-_-｡), but these people are!";
                         var admins = e.Server.Users.Where(x => x.ServerPermissions.Administrator).ToList();
                         admins.ForEach(x => msg += $" | {x.Name} | ");
@@ -185,7 +196,8 @@ namespace BundtBot.BundtBot {
                 .Do(async e => {
                     if (e.User.Roles.Any(x => x.Name.Equals("mod"))) {
                         await e.Channel.SendMessageEx("Yes, you are! ┌( ಠ‿ಠ)┘");
-                    } else {
+                    }
+                    else {
                         await e.Channel.SendMessageEx("No, you aren't (-_-｡)");
                     }
                 });
@@ -199,7 +211,7 @@ namespace BundtBot.BundtBot {
                 .Description("Why wasn't I invited?.")
                 .Do(async e => {
                     await e.Channel.SendMessageEx("Click this link to invite me to your server: "
-                        + Constants.InviteLink);
+                                                  + Constants.InviteLink);
                 });
             commandService.CreateCommand("bot")
                 .Description("Why wasn't I invited?.")
@@ -215,9 +227,11 @@ namespace BundtBot.BundtBot {
                     Thread.Sleep(333);
                     await msg2.Edit(msg2.Text + ":on:" + ":top:");
                 });
+
             #endregion
 
             #region SoundBoard
+
             commandService.CreateCommand("stop")
                 .Alias("shutup", "stfu", "👎", "🚫🎶", "🚫 🎶")
                 .Description("Please don't stop the :notes:.")
@@ -238,10 +252,13 @@ namespace BundtBot.BundtBot {
                         var msg = await e.Channel.SendMessageEx("end of line");
                         _soundManager.Skip();
                         await msg.Edit(msg.Text + " :stop_button:");
-                    } else {
+                    }
+                    else {
                         var msg = await e.Channel.SendMessageEx("standby...");
                         _soundManager.Skip();
-                        await msg.Edit(msg.Text + "Clip has been terminated, and it's parents have been notified. The next clip in line has taken its place. How do you sleep at night.");
+                        await
+                            msg.Edit(msg.Text +
+                                     "Clip has been terminated, and it's parents have been notified. The next clip in line has taken its place. How do you sleep at night.");
                     }
                 });
             commandService.CreateCommand("like")
@@ -251,14 +268,25 @@ namespace BundtBot.BundtBot {
                     // Find out what song is playing
                     var currentSound = _soundManager.CurrentlyPlayingSound;
 
-                    using (var db = new LiteDatabase(@"MyData.db")) {
-                        // Get customer collection
-                        var clips = db.GetCollection<AudioClip>("AudioClips");
-                        var clip = clips.FindOne(x => x.Title == currentSound.AudioClip.Title);
-                        clip.Likes++;
-                        clips.Update(clip);
-                        await e.Channel.SendMessageEx($"{clip.Title} has now been liked {clip.Likes} times, good for it");
+                    var clip = DB.AudioClips.FindOne(x => x.Title == currentSound.AudioClip.Title);
+
+                    var usersLikes = DB.AudioClipVotes.Find(x => x.User.SnowflakeId == e.User.Id);
+                    if (usersLikes.First(x => x.AudioClip.Id == clip.Id) == null) {
+                        DB.AudioClipVotes.Insert(new AudioClipVote {
+                            User = new User { SnowflakeId = e.User.Id },
+                            AudioClip = clip
+                        });
+                        await e.Channel.SendMessageEx($"i like **{clip.Title}** too 😎");
+                    } else {
+                        await e.Channel.SendMessageEx($"i already know that you like **{clip.Title}**");
                     }
+                });
+            commandService.CreateCommand("mylikes")
+                .Do(async e => {
+                    var likes = DB.AudioClipVotes.Find(x => x.User.SnowflakeId == e.User.Id);
+                    var msg = "";
+                    likes.ToList().ForEach(x => msg += x.AudioClip.Title + "\n");
+                    await e.User.SendMessage(msg);
                 });
             commandService.CreateCommand("sb")
                 .Alias("owsb")
@@ -276,7 +304,8 @@ namespace BundtBot.BundtBot {
                     try {
                         // Filter out the arguments (words starting with '--')
                         args = SoundBoard.ExtractArgs(ref actorAndSoundString);
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         await e.Channel.SendMessageEx($"you're doing it wrong ({ex.Message})");
                         return;
                     }
@@ -292,7 +321,7 @@ namespace BundtBot.BundtBot {
                     var soundName = actorAndSoundNames.Item2;
 
                     FileInfo soundFile;
-                    
+
                     if (_soundBoard.TryGetSoundPath(actorName, soundName, out soundFile) == false) {
                         await e.Channel.SendMessageEx("these are not the sounds you're looking for...");
                         return;
@@ -309,7 +338,8 @@ namespace BundtBot.BundtBot {
                         if (args.Count > 0) {
                             SoundBoard.ParseArgs(args, ref sound);
                         }
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         await e.Channel.SendMessageEx($"you're doing it wrong ({ex.Message})");
                         return;
                     }
@@ -325,14 +355,15 @@ namespace BundtBot.BundtBot {
 
                     if (unparsedArgsString.IsNullOrWhiteSpace()) {
                         await e.Channel.SendMessageEx("http://i1.kym-cdn.com/photos/images/original/000/614/523/644.jpg"
-                            + "\ndo it liek dis `!yt This Is Gangsta Rap`");
+                                                      + "\ndo it liek dis `!yt This Is Gangsta Rap`");
                         return;
                     }
 
                     List<string> args;
                     try {
                         args = SoundBoard.ExtractArgs(ref unparsedArgsString);
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         await e.Channel.SendMessageEx($"you're doing it wrong ({ex.Message})");
                         return;
                     }
@@ -346,18 +377,19 @@ namespace BundtBot.BundtBot {
                     }
 
                     AudioClip audioClip;
-                    
+
                     var youtubeVideoID = await GetYoutubeVideoIdBySearchString(ytSearchString);
 
                     if (AudioClip.TryGetAudioClipByYoutubeId(youtubeVideoID, out audioClip)) {
                         audioClip.AddSearchString(ytSearchString);
                     }
-                    
+
                     if (audioClip == null) {
                         audioClip = await GetAudioClipByYoutubeId(e, youtubeVideoID);
                         if (audioClip == null) return;
                         audioClip.AddSearchString(ytSearchString);
-                    } else if (File.Exists(audioClip.Path) == false) {
+                    }
+                    else if (File.Exists(audioClip.Path) == false) {
                         await RedownloadAudioClip(e, audioClip);
                     }
 
@@ -369,7 +401,8 @@ namespace BundtBot.BundtBot {
                         // Defaulting youtube volume to 5 because they are long
                         sound.Volume = 0.5f;
                         if (args.Count > 0) SoundBoard.ParseArgs(args, ref sound);
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         await e.Channel.SendMessageEx($"you're doing it wrong ({ex.Message})");
                         return;
                     }
@@ -384,7 +417,8 @@ namespace BundtBot.BundtBot {
                     try {
                         // Filter out the arguments (words starting with '--')
                         args = SoundBoard.ExtractArgs(ref e.Args[0]);
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         await e.Channel.SendMessageEx($"you're doing it wrong ({ex.Message})");
                         return;
                     }
@@ -397,12 +431,15 @@ namespace BundtBot.BundtBot {
                     }
 
                     var haikuMsg = await e.Channel.SendMessageEx("☢HAIKU INCOMING☢");
-                    
+
                     var haikuUrl = await RedditManager.GetYoutubeHaikuUrlAsync();
 
                     await haikuMsg.Edit(haikuMsg.Text + $": {haikuUrl.AbsoluteUri}");
 
-                    var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, haikuUrl.AbsoluteUri, Mp3OutputFolder);
+                    var youtubeOutput =
+                        await
+                            new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, haikuUrl.AbsoluteUri,
+                                Mp3OutputFolder);
                     var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
                     var outputWAVFile = await new FFMPEG().FFMPEGConvertToWAVAsync(youtubeOutput);
                     await msg.Edit(msg.Text + "finished!");
@@ -429,7 +466,8 @@ namespace BundtBot.BundtBot {
                         if (args.Count > 0) {
                             SoundBoard.ParseArgs(args, ref sound);
                         }
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         await e.Channel.SendMessageEx($"you're doing it wrong ({ex.Message})");
                         return;
                     }
@@ -444,7 +482,8 @@ namespace BundtBot.BundtBot {
                         var desiredVolume = float.Parse(e.Args[0]) / 10f;
                         _soundManager.SetVolumeOverride(desiredVolume);
                         await e.Channel.SendMessageEx($"global volume set to {desiredVolume * 10}");
-                    } catch (Exception) {
+                    }
+                    catch (Exception) {
                         await e.Channel.SendMessageEx("wat did u doo to dah volumez");
                         throw;
                     }
@@ -458,27 +497,41 @@ namespace BundtBot.BundtBot {
                         var desiredVolume = float.Parse(e.Args[0]) / 10f;
                         _soundManager.SetVolumeOfCurrentClip(desiredVolume);
                         await e.Channel.SendMessageEx("is dat betta?");
-                    } catch (Exception) {
+                    }
+                    catch (Exception) {
                         await e.Channel.SendMessageEx("wat did u doo to dah volumez");
                         throw;
                     }
                 });
+
+            #endregion
+
+            #region DBCommands
+
+            commandService.CreateCommand("users")
+                .Do(async e => {
+                    await e.Channel.SendMessageEx($"I have {User.All().Count} users registered");
+                });
+
             #endregion
 
             #region AliasCommands
+
             // TODO
             /*commandService.CreateCommand("potg")
                 .Description("gratz on your play of the game")
                 .Do(async e => {
                     
                 });*/
+
             #endregion
         }
 
         static async Task<string> GetYoutubeVideoIdBySearchString(string ytSearchString) {
             AudioClip audioClip;
 
-            if (AudioClip.TryGetAudioClipByYoutubeSearchString(ytSearchString, out audioClip)) return audioClip.YoutubeID;
+            if (AudioClip.TryGetAudioClipByYoutubeSearchString(ytSearchString, out audioClip))
+                return audioClip.YoutubeID;
 
             return await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
         }
@@ -503,7 +556,8 @@ namespace BundtBot.BundtBot {
 
             if (youtubeOutput.Extension != "mp3") {
                 audioClipPath = await new FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
-            } else {
+            }
+            else {
                 audioClipPath = youtubeOutput;
             }
 
@@ -532,7 +586,8 @@ namespace BundtBot.BundtBot {
 
             if (youtubeOutput.Extension != "mp3") {
                 audioClipPath = await new FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
-            } else {
+            }
+            else {
                 audioClipPath = youtubeOutput;
             }
 
@@ -566,14 +621,17 @@ namespace BundtBot.BundtBot {
             MyLogger.Write("Registering Event Handlers...");
 
             #region ConnectedEvents
+
             _client.Ready += (sender, e) => {
                 MyLogger.WriteLine("Client is Ready/Connected! ໒( ͡ᵔ ▾ ͡ᵔ )७", ConsoleColor.Green);
                 MyLogger.WriteLine("Setting game...");
                 _client.SetGame("gniyalP");
             };
+
             #endregion
 
             #region MessageEvents
+
             _client.MessageDeleted += (sender, e) => {
 
             };
@@ -582,26 +640,39 @@ namespace BundtBot.BundtBot {
             };
             _client.MessageReceived += (sender, e) => {
             };
+
             #endregion
 
             #region ChannelEvents
+
             _client.ChannelCreated += async (sender, e) => {
-                await e.Channel.SendMessageEx("less is more");
-                if (e.Channel.Name.ToLower().Contains("bundtbot")) {
-                    if (TextChannelOverrides.ContainsKey(e.Server)) {
-                        TextChannelOverrides[e.Server] = e.Channel;
-                    } else {
-                        TextChannelOverrides.Add(e.Server, e.Channel);
+                try {
+                    await e.Channel.SendMessageEx("less is more");
+                    if (e.Channel.Name.ToLower().Contains("bundtbot")) {
+                        if (TextChannelOverrides.ContainsKey(e.Server)) {
+                            TextChannelOverrides[e.Server] = e.Channel;
+                        }
+                        else {
+                            TextChannelOverrides.Add(e.Server, e.Channel);
+                        }
                     }
+                } catch (Exception ex) {
+                    MyLogger.WriteException(ex);
                 }
+
             };
             _client.ChannelDestroyed += async (sender, e) => {
-                await e.Channel.SendMessageEx("RIP in pieces " + e.Channel.Name);
-                if (TextChannelOverrides.ContainsKey(e.Server)) {
-                    if (TextChannelOverrides[e.Server] == e.Channel) {
-                        TextChannelOverrides.Remove(e.Server);
+                try {
+                    await e.Channel.SendMessageEx("RIP in pieces " + e.Channel.Name);
+                    if (TextChannelOverrides.ContainsKey(e.Server)) {
+                        if (TextChannelOverrides[e.Server] == e.Channel) {
+                            TextChannelOverrides.Remove(e.Server);
+                        }
                     }
+                } catch (Exception ex) {
+                    MyLogger.WriteException(ex);
                 }
+                
             };
             _client.ChannelUpdated += (sender, e) => {
                 if (e.After.Name.ToLower().Contains("bundtbot")) {
@@ -635,6 +706,12 @@ namespace BundtBot.BundtBot {
                     if (textChannel.Name.ToLower().Contains("bundtbot")) {
                         TextChannelOverrides.Add(e.Server, textChannel);
                         break;
+                    }
+                }
+                // Register Users in DB
+                foreach (var user in e.Server.Users) {
+                    if (Models.User.Exists(user.Id) == false) {
+                        Models.User.New(user.Id);
                     }
                 }
             };

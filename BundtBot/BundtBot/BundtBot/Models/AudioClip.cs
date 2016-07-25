@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using BundtBot.BundtBot.Database;
 using LiteDB;
 
 namespace BundtBot.BundtBot.Models {
@@ -9,42 +10,24 @@ namespace BundtBot.BundtBot.Models {
         public int Id{ get; set; }
         public string Title { get; set; }
         public uint Length { get; set; }
-        public uint Likes { get; set; }
+        [BsonIndex(true)]
         public string Path { get; set; }
+        [BsonIndex(true)]
         public string YoutubeID { get; set; }
 
         public override string ToString() {
-            return $"Id: {Id}, Title: {Title}, TimeLimit: {Length}, Likes: {Likes}, Path: {Path}, YoutubeID: {YoutubeID}";
+            return $"Id: {Id}, Title: {Title}, TimeLimit: {Length}, Path: {Path}, YoutubeID: {YoutubeID}";
         }
 
         internal static bool TryGetAudioClipByYoutubeSearchString(string ytSearchString, out AudioClip audioClip) {
-            using (var db = new LiteDatabase(@"MyData.db")) {
-                var searchStrings = db.GetCollection<YoutubeSearchString>("YoutubeSearchStrings");
-                var clips = db.GetCollection<AudioClip>("AudioClips");
-
-                clips.EnsureIndex(x => x.Id);
-                searchStrings.EnsureIndex(x => x.Text);
-
-                var clipId = searchStrings.FindOne(x => x.Text == ytSearchString)?.AudioClipId;
-
-                audioClip = clips.FindOne(x => x.Id == clipId);
-            }
-
-            if (audioClip == null) return false;
-
-            return true;
+            var clipId = DB.YoutubeSearchStrings.FindOne(x => x.Text == ytSearchString)?.AudioClipId;
+            audioClip = DB.AudioClips.FindOne(x => x.Id == clipId);
+            return audioClip != null;
         }
 
         internal static bool TryGetAudioClipByYoutubeId(string youtubeVideoID, out AudioClip audioClip) {
-            using (var db = new LiteDatabase(@"MyData.db")) {
-                var clips = db.GetCollection<AudioClip>("AudioClips");
-                clips.EnsureIndex(x => x.YoutubeID);
-                audioClip = clips.FindOne(x => x.YoutubeID == youtubeVideoID);
-            }
-
-            if (audioClip == null) return false;
-
-            return true;
+            audioClip = DB.AudioClips.FindOne(x => x.YoutubeID == youtubeVideoID);
+            return audioClip != null;
         }
 
         internal static AudioClip NewAudioClip(string youtubeVideoTitle, FileInfo outputWAVFile, string youtubeVideoID, string ytSearchString) {
@@ -54,38 +37,25 @@ namespace BundtBot.BundtBot.Models {
         }
 
         internal static AudioClip NewAudioClip(string youtubeVideoTitle, FileInfo outputWAVFile, string youtubeVideoID) {
-            using (var db = new LiteDatabase(@"MyData.db")) {
-                var clips = db.GetCollection<AudioClip>("AudioClips");
-
-                var audioClip = new AudioClip {
-                    Title = youtubeVideoTitle,
-                    Path = outputWAVFile.FullName,
-                    YoutubeID = youtubeVideoID
-                };
-
-                audioClip = clips.FindById(clips.Insert(audioClip));
-
-                return audioClip;
-            }
+            var audioClip = new AudioClip {
+                Title = youtubeVideoTitle,
+                Path = outputWAVFile.FullName,
+                YoutubeID = youtubeVideoID
+            };
+            return DB.AudioClips.FindById(DB.AudioClips.Insert(audioClip));
         }
 
         internal void AddSearchString(string ytSearchString) {
-            using (var db = new LiteDatabase(@"MyData.db")) {
-                var searchStrings = db.GetCollection<YoutubeSearchString>("YoutubeSearchStrings");
-                if (searchStrings.Exists(x => x.Text == ytSearchString) == false) {
-                    searchStrings.Insert(new YoutubeSearchString {
-                        Text = ytSearchString,
-                        AudioClipId = Id
-                    });
-                }
+            if (DB.YoutubeSearchStrings.Exists(x => x.Text == ytSearchString) == false) {
+                DB.YoutubeSearchStrings.Insert(new YoutubeSearchString {
+                    Text = ytSearchString,
+                    AudioClipId = Id
+                });
             }
         }
 
         internal void Save() {
-            using (var db = new LiteDatabase(@"MyData.db")) {
-                var clips = db.GetCollection<AudioClip>("AudioClips");
-                clips.Update(this);
-            }
+            DB.AudioClips.Update(this);
         }
     }
 }
