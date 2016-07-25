@@ -18,7 +18,6 @@ using BundtBot.BundtBot.Models;
 using BundtBot.BundtBot.Reddit;
 using BundtBot.BundtBot.Youtube;
 using Discord.Net;
-using LiteDB;
 using User = BundtBot.BundtBot.Models.User;
 
 namespace BundtBot.BundtBot {
@@ -252,13 +251,32 @@ namespace BundtBot.BundtBot {
                         var msg = await e.Channel.SendMessageEx("end of line");
                         _soundManager.Skip();
                         await msg.Edit(msg.Text + " :stop_button:");
-                    }
-                    else {
+                    } else {
                         var msg = await e.Channel.SendMessageEx("standby...");
                         _soundManager.Skip();
                         await
                             msg.Edit(msg.Text +
                                      "Clip has been terminated, and it's parents have been notified. The next clip in line has taken its place. How do you sleep at night.");
+                    }
+                });
+            commandService.CreateCommand("upnext")
+                .Alias("whatsnext", "peek")
+                .Description("look at next clip")
+                .Do(async e => {
+                    if (_soundManager.IsPlaying == false) {
+                        await e.Channel.SendMessageEx("there's nothing up next, because nothing is even playing...");
+                        return;
+                    }
+                    if (_soundManager.HasThingsInQueue == false) {
+                        await e.Channel.SendMessageEx("nuthin");
+                    } else {
+                        var nextSound = _soundManager.PeekNext();
+                        if (nextSound == null) {
+                            await e.Channel.SendMessageEx("i thought there was something up next, " +
+                                                    "but i may have been wrong, so, umm, sorry?");
+                        } else {
+                            await e.Channel.SendMessageEx($"Up Next: **{nextSound.AudioClip.Title}**");
+                        }
                     }
                 });
             commandService.CreateCommand("like")

@@ -113,5 +113,11 @@ namespace BundtBot.BundtBot.Sound {
             _audioStreamer.ClearVolumeOverride();
             MyLogger.WriteLine("[SoundManager] Volume Override cleared");
         }
+
+        internal Sound PeekNext() {
+            Sound sound;
+            _soundQueue.TryPeek(out sound);
+            return sound;
+        }
     }
 }
