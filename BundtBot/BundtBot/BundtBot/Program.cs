@@ -30,31 +30,54 @@ namespace BundtBot.BundtBot {
         DiscordClient _client;
         string _version = "0.0";
 
-        const string Mp3OutputFolder = "c:/@mp3/";
-        const string BotTokenPath = "keys/BotToken.txt";
+        static readonly string _songCachePath = ConfigurationManager.AppSettings["SongCacheFolder"];
+        static readonly string _botTokenPath = ConfigurationManager.AppSettings["BotTokenPath"];
 
         static void Main() {
             new Program().Start();
         }
 
         void Start() {
+            InitConsole();
+            InitVersion();
+            InitClient();
+
+            WriteBundtBotASCIIArtToConsole();
+            MyLogger.WriteLine("v" + _version, ConsoleColor.Cyan);
+            MyLogger.NewLine();
+
+            SetupCommands();
+            RegisterEventHandlers();
+
+            while (true) {
+                try {
+                    _client.ExecuteAndWait(async () => await _client.Connect(LoadBotToken()));
+                } catch (Exception ex) {
+                    MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
+                    MyLogger.WriteException(ex);
+                }
+            }
+        }
+
+        void InitClient() {
+            _client = new DiscordClient(x => { x.LogLevel = LogSeverity.Debug; });
+
+            _client.UsingAudio(x => { x.Mode = AudioMode.Outgoing; });
+
+            _client.UsingCommands(x => {
+                x.PrefixChar = ConfigurationManager.AppSettings["CommandPrefix"][0];
+                x.HelpMode = HelpMode.Public;
+            });
+        }
+
+        static void InitConsole() {
             // Allows stuff like ʘ ͜ʖ ʘ to show in the Console
             Console.OutputEncoding = Encoding.UTF8;
             Console.WindowHeight = (int) (Console.LargestWindowHeight * 0.9);
             Console.WindowTop = 0;
+        }
 
-            // Load Bot Token
-            string botToken;
-
-            try {
-                botToken = LoadBotToken();
-            }
-            catch (Exception ex) {
-                MyLogger.WriteException(ex);
-                MyLogger.WriteExitMessageAndReadKey();
-                return;
-            }
-
+        void InitVersion() {
             const string versionPath = "version.txt";
             if (File.Exists(versionPath)) {
                 var versionFloat = float.Parse(File.ReadAllText(versionPath));
@@ -62,46 +85,10 @@ namespace BundtBot.BundtBot {
                 _version = versionFloat.ToString("0.00");
             }
             File.WriteAllText(versionPath, _version);
-
             const string otherVersionPath = "../../version.txt";
             if (File.Exists(otherVersionPath)) {
                 File.WriteAllText(otherVersionPath, _version);
             }
-
-            _client = new DiscordClient(x => {
-                x.LogLevel = LogSeverity.Debug;
-            });
-
-            WriteBundtBotASCIIArtToConsole();
-            MyLogger.WriteLine("v" + _version, ConsoleColor.Cyan);
-            MyLogger.NewLine();
-
-            _client.UsingAudio(x => {
-                x.Mode = AudioMode.Outgoing;
-            });
-
-            _client.UsingCommands(x => {
-                x.PrefixChar = ConfigurationManager.AppSettings["CommandPrefix"][0];
-                x.HelpMode = HelpMode.Public;
-            });
-
-            SetupCommands();
-
-            RegisterEventHandlers();
-
-            while (true) {
-                try {
-                    _client.ExecuteAndWait(async () => {
-                        await _client.Connect(botToken);
-                    });
-                    //break;
-                }
-                catch (Exception ex) {
-                    MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
-                    MyLogger.WriteException(ex);
-                }
-            }
-
         }
 
         void SetupCommands() {
@@ -252,7 +239,8 @@ namespace BundtBot.BundtBot {
                         var msg = await e.Channel.SendMessageEx("end of line");
                         _soundManager.Skip();
                         await msg.Edit(msg.Text + " :stop_button:");
-                    } else {
+                    }
+                    else {
                         var msg = await e.Channel.SendMessageEx("standby...");
                         _soundManager.Skip();
                         await
@@ -270,12 +258,14 @@ namespace BundtBot.BundtBot {
                     }
                     if (_soundManager.HasThingsInQueue == false) {
                         await e.Channel.SendMessageEx("nuthin");
-                    } else {
+                    }
+                    else {
                         var nextSound = _soundManager.PeekNext();
                         if (nextSound == null) {
                             await e.Channel.SendMessageEx("i thought there was something up next, " +
-                                                    "but i may have been wrong, so, umm, sorry?");
-                        } else {
+                                                          "but i may have been wrong, so, umm, sorry?");
+                        }
+                        else {
                             await e.Channel.SendMessageEx($"Up Next: **{nextSound.AudioClip.Title}**");
                         }
                     }
@@ -458,7 +448,7 @@ namespace BundtBot.BundtBot {
                     var youtubeOutput =
                         await
                             new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, haikuUrl.AbsoluteUri,
-                                Mp3OutputFolder);
+                                _songCachePath);
                     var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
                     var outputWAVFile = await new FFMPEG().FFMPEGConvertToWAVAsync(youtubeOutput);
                     await msg.Edit(msg.Text + "finished!");
@@ -567,7 +557,7 @@ namespace BundtBot.BundtBot {
 
             FileInfo youtubeOutput;
 
-            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeURL, Mp3OutputFolder);
+            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeURL, _songCachePath);
 
             var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
 
@@ -597,7 +587,7 @@ namespace BundtBot.BundtBot {
 
             FileInfo youtubeOutput;
 
-            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeURL, Mp3OutputFolder);
+            youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeURL, _songCachePath);
 
             var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
 
@@ -629,11 +619,17 @@ namespace BundtBot.BundtBot {
         }
 
         static string LoadBotToken() {
-            var token = File.ReadLines(BotTokenPath).First();
-            if (token.IsNullOrEmpty()) {
-                throw new Exception("Bot token was empty or null after reading it from " + BotTokenPath);
+            try {
+                var token = File.ReadLines(_botTokenPath).First();
+                if (token.IsNullOrEmpty()) {
+                    throw new Exception("Bot token was empty or null after reading it from " + _botTokenPath);
+                }
+                return token;
             }
-            return token;
+            catch (Exception ex) {
+                MyLogger.WriteException(ex);
+                throw;
+            }
         }
 
         void RegisterEventHandlers() {
