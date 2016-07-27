@@ -270,6 +270,14 @@ namespace BundtBot.BundtBot {
                         }
                     }
                 });
+            commandService.CreateCommand("nowplaying")
+                .Do(async e => {
+                    if (_soundManager.IsPlaying == false) {
+                        await e.Channel.SendMessageEx("nothing");
+                        return;
+                    }
+                    await e.Channel.SendMessageEx($"**{_soundManager.CurrentlyPlayingSound.AudioClip.Title}**");
+                });
             commandService.CreateCommand("like")
                 .Alias("thumbsup", "upvote", "👍")
                 .Description("bundtbot for president 2020")
