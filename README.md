@@ -28,4 +28,4 @@ https://discord.gg/VFXUA6C
 TODO
 
 ### Joining servers
-https://discordapp.com/oauth2/authorize?&client_id=<BOT_CLIENT_ID>&scope=bot&permissions=70376448
+https://discordapp.com/oauth2/authorize?&client_id=BOT_CLIENT_ID&scope=bot&permissions=70376448
