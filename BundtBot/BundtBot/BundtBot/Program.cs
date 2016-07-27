@@ -277,23 +277,29 @@ namespace BundtBot.BundtBot {
                     // Find out what song is playing
                     var currentSound = _soundManager.CurrentlyPlayingSound;
 
+                    if (currentSound == null) {
+                        await e.Channel.SendMessageEx($"what's to like? nothing is playing...");
+                        return;
+                    }
+
                     var clip = DB.AudioClips.FindOne(x => x.Title == currentSound.AudioClip.Title);
 
                     var usersLikes = DB.AudioClipVotes.Find(x => x.User.SnowflakeId == e.User.Id);
-                    if (usersLikes.First(x => x.AudioClip.Id == clip.Id) == null) {
+                    if (usersLikes.Any(x => x.AudioClip.Id == clip.Id) == false) {
                         DB.AudioClipVotes.Insert(new AudioClipVote {
-                            User = new User { SnowflakeId = e.User.Id },
+                            User = new User {SnowflakeId = e.User.Id},
                             AudioClip = clip
                         });
                         await e.Channel.SendMessageEx($"i like **{clip.Title}** too 😎");
-                    } else {
+                    }
+                    else {
                         await e.Channel.SendMessageEx($"i already know that you like **{clip.Title}**");
                     }
                 });
             commandService.CreateCommand("mylikes")
                 .Do(async e => {
                     var likes = DB.AudioClipVotes.Find(x => x.User.SnowflakeId == e.User.Id);
-                    var msg = "";
+                    var msg = "**Your Likes:**\n";
                     likes.ToList().ForEach(x => msg += x.AudioClip.Title + "\n");
                     await e.User.SendMessage(msg);
                 });
