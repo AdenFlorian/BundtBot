@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -80,7 +81,7 @@ namespace BundtBot.BundtBot {
             });
 
             _client.UsingCommands(x => {
-                x.PrefixChar = '!';
+                x.PrefixChar = ConfigurationManager.AppSettings["CommandPrefix"][0];
                 x.HelpMode = HelpMode.Public;
             });
 

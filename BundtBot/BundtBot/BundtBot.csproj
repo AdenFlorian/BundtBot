@@ -129,10 +129,6 @@
       <HintPath>..\packages\NString.1.1.7\lib\dotnet\NString.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="NVorbis.NAudioSupport, Version=0.5.6.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\NVorbis.NAudioSupport.dll</HintPath>
-    </Reference>
     <Reference Include="Octokit, Version=0.20.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Octokit.0.20.0\lib\net45\Octokit.dll</HintPath>
       <Private>True</Private>
