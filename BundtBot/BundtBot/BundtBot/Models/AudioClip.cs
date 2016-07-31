@@ -7,26 +7,27 @@ using LiteDB;
 namespace BundtBot.BundtBot.Models {
     public class AudioClip {
         [BsonId]
-        public int Id{ get; set; }
-        public string Title { get; set; }
-        public uint Length { get; set; }
+        public ObjectId Id { get; set; }
         [BsonIndex(true)]
         public string Path { get; set; }
         [BsonIndex(true)]
-        public string YoutubeID { get; set; }
+        public string YoutubeId { get; set; }
+        public string Title { get; set; }
+        public uint Length { get; set; }
 
         public override string ToString() {
-            return $"Id: {Id}, Title: {Title}, TimeLimit: {Length}, Path: {Path}, YoutubeID: {YoutubeID}";
+            return $"Id: {Id}, Title: {Title}, TimeLimit: {Length}, Path: {Path}, YoutubeId: {YoutubeId}";
         }
 
         internal static bool TryGetAudioClipByYoutubeSearchString(string ytSearchString, out AudioClip audioClip) {
-            var clipId = DB.YoutubeSearchStrings.FindOne(x => x.Text == ytSearchString)?.AudioClipId;
-            audioClip = DB.AudioClips.FindOne(x => x.Id == clipId);
+            audioClip = DB.YoutubeSearchStrings
+                .Include(x => x.AudioClip)
+                .FindOne(x => x.Text == ytSearchString)?.AudioClip;
             return audioClip != null;
         }
 
         internal static bool TryGetAudioClipByYoutubeId(string youtubeVideoID, out AudioClip audioClip) {
-            audioClip = DB.AudioClips.FindOne(x => x.YoutubeID == youtubeVideoID);
+            audioClip = DB.AudioClips.FindOne(x => x.YoutubeId == youtubeVideoID);
             return audioClip != null;
         }
 
@@ -40,7 +41,7 @@ namespace BundtBot.BundtBot.Models {
             var audioClip = new AudioClip {
                 Title = youtubeVideoTitle,
                 Path = outputWAVFile.FullName,
-                YoutubeID = youtubeVideoID
+                YoutubeId = youtubeVideoID
             };
             return DB.AudioClips.FindById(DB.AudioClips.Insert(audioClip));
         }
@@ -49,7 +50,7 @@ namespace BundtBot.BundtBot.Models {
             if (DB.YoutubeSearchStrings.Exists(x => x.Text == ytSearchString) == false) {
                 DB.YoutubeSearchStrings.Insert(new YoutubeSearchString {
                     Text = ytSearchString,
-                    AudioClipId = Id
+                    AudioClip = this
                 });
             }
         }

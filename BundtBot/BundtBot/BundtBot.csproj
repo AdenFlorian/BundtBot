@@ -173,7 +173,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BundtBot\Commands.cs" />
     <Compile Include="BundtBot\Database\DB.cs" />
+    <Compile Include="BundtBot\EventHandlers.cs" />
     <Compile Include="BundtBot\Models\AudioClipVote.cs" />
     <Compile Include="BundtBot\Models\User.cs" />
     <Compile Include="BundtBot\Youtube\AudioDownloader.cs" />

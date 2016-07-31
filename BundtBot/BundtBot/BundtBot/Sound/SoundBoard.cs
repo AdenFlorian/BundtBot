@@ -7,10 +7,20 @@ using NString;
 
 namespace BundtBot.BundtBot.Sound {
     class SoundBoard {
-        readonly Random _random = new Random();
-
-        const string BasePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
         const char Slash = '\\';
+
+        readonly Random _random;
+        readonly string _basePath;
+
+        public SoundBoard() {
+            _random = new Random();
+            _basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
+        }
+
+        public SoundBoard(Random random, string basePath) {
+            _random = random;
+            _basePath = basePath;
+        }
 
         /// <summary>
         /// Gets the path to a sound file by actor and sound names.
@@ -27,7 +37,7 @@ namespace BundtBot.BundtBot.Sound {
                 return false;
             }
 
-            soundFile = new FileInfo(BasePath + actorName + Slash + soundName + ".mp3");
+            soundFile = new FileInfo(_basePath + actorName + Slash + soundName + ".mp3");
 
             Console.Write("looking for " + soundFile.FullName + "\t");
 
@@ -133,7 +143,7 @@ namespace BundtBot.BundtBot.Sound {
 
         /// <summary>Returns true if it found a match</summary>
         bool CheckActorName(ref string actorName) {
-            var actorDirectories = Directory.GetDirectories(BasePath);
+            var actorDirectories = Directory.GetDirectories(_basePath);
 
             if (actorDirectories.Length < 1) {
                 throw new Exception("Expected at least one directory in directory");
@@ -178,8 +188,8 @@ namespace BundtBot.BundtBot.Sound {
         }
 
         /// <summary>Returns true if it found a match</summary>
-        static bool CheckSoundName(ref string soundName, string actorName) {
-            var soundNames = Directory.GetFiles(BasePath + actorName);
+        bool CheckSoundName(ref string soundName, string actorName) {
+            var soundNames = Directory.GetFiles(_basePath + actorName);
 
             if (soundNames.Length < 1) {
                 throw new Exception("Expected at least one file in directory");
