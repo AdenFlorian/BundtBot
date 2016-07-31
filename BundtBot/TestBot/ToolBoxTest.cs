@@ -1,9 +1,7 @@
-﻿using System;
+﻿using BundtBot.Utility;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using BundtBot.BundtBot;
-using BundtBot.BundtBot.Utility;
 
-namespace TestBot {
+namespace BundtBotTest {
     [TestClass]
     public class ToolBoxTest {
         [TestMethod]

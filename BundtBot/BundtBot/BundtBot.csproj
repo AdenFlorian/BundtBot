@@ -9,9 +9,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BundtBot</RootNamespace>
     <AssemblyName>BundtBot</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -24,10 +26,8 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -94,11 +94,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>BundtBot.BundtBot.Program</StartupObject>
+    <StartupObject>BundtBot.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HtmlAgilityPack, Version=1.4.9.5, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="JetBrains.Annotations, Version=10.1.5.0, Culture=neutral, PublicKeyToken=1010a0d8d6380325, processorArchitecture=MSIL">
+      <HintPath>..\packages\JetBrains.Annotations.10.1.5\lib\net\JetBrains.Annotations.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="LiteDB, Version=2.0.0.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27, processorArchitecture=MSIL">
@@ -129,8 +133,8 @@
       <HintPath>..\packages\NString.1.1.7\lib\dotnet\NString.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Octokit, Version=0.20.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Octokit.0.20.0\lib\net45\Octokit.dll</HintPath>
+    <Reference Include="Octokit, Version=0.21.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Octokit.0.21.1\lib\net45\Octokit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="RedditSharp, Version=1.0.22.0, Culture=neutral, processorArchitecture=MSIL">
@@ -152,14 +156,6 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Runtime, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.4.1.0\lib\net462\System.Runtime.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Runtime.Extensions, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.Extensions.4.1.0\lib\net462\System.Runtime.Extensions.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -173,41 +169,42 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BundtBot\Commands.cs" />
-    <Compile Include="BundtBot\Database\DB.cs" />
-    <Compile Include="BundtBot\EventHandlers.cs" />
-    <Compile Include="BundtBot\Models\AudioClipVote.cs" />
-    <Compile Include="BundtBot\Models\User.cs" />
-    <Compile Include="BundtBot\Youtube\AudioDownloader.cs" />
-    <Compile Include="BundtBot\Extensions\ChannelExtensions.cs" />
-    <Compile Include="BundtBot\Extensions\DiscordNetExtensions.cs" />
-    <Compile Include="BundtBot\Extensions\FileInfoExtensions.cs" />
-    <Compile Include="BundtBot\Extensions\ListExtensions.cs" />
-    <Compile Include="BundtBot\Models\AudioClip.cs" />
-    <Compile Include="BundtBot\Models\YoutubeSearchString.cs" />
-    <Compile Include="BundtBot\Youtube\ProgressEventArgs.cs" />
-    <Compile Include="BundtBot\Reddit\RedditManager.cs" />
-    <Compile Include="BundtBot\Sound\SoundStreamer.cs" />
-    <Compile Include="BundtBot\CatDog.cs" />
-    <Compile Include="BundtBot\Constants.cs" />
-    <Compile Include="BundtBot\FFMPEG.cs" />
-    <Compile Include="BundtBot\Utility\NumberSpeller.cs" />
-    <Compile Include="BundtBot\Effects\Reverb.cs" />
-    <Compile Include="BundtBot\Effects\Echo.cs" />
-    <Compile Include="BundtBot\Effects\EffectStream.cs" />
-    <Compile Include="BundtBot\Utility\ConsoleColorHelper.cs" />
-    <Compile Include="BundtBot\Effects\IEffect.cs" />
-    <Compile Include="BundtBot\Utility\MyLogger.cs" />
-    <Compile Include="BundtBot\Sound\Sound.cs" />
-    <Compile Include="BundtBot\Sound\SoundManager.cs" />
-    <Compile Include="BundtBot\Utility\ToolBox.cs" />
-    <Compile Include="BundtBot\Program.cs" />
-    <Compile Include="BundtBot\Youtube\YoutubeDownloader.cs" />
-    <Compile Include="BundtBot\Youtube\YoutubeException.cs" />
-    <Compile Include="BundtBot\Youtube\YoutubeVideoID.cs" />
-    <Compile Include="BundtBot\Youtube\YoutubeVideoName.cs" />
+    <Compile Include="src\BundtBot.cs" />
+    <Compile Include="src\Commands.cs" />
+    <Compile Include="src\Database\DB.cs" />
+    <Compile Include="src\EventHandlers.cs" />
+    <Compile Include="src\Models\AudioClipVote.cs" />
+    <Compile Include="src\Models\User.cs" />
+    <Compile Include="src\Youtube\AudioDownloader.cs" />
+    <Compile Include="src\Extensions\ChannelExtensions.cs" />
+    <Compile Include="src\Extensions\DiscordNetExtensions.cs" />
+    <Compile Include="src\Extensions\FileInfoExtensions.cs" />
+    <Compile Include="src\Extensions\ListExtensions.cs" />
+    <Compile Include="src\Models\AudioClip.cs" />
+    <Compile Include="src\Models\YoutubeSearchString.cs" />
+    <Compile Include="src\Youtube\ProgressEventArgs.cs" />
+    <Compile Include="src\Reddit\RedditManager.cs" />
+    <Compile Include="src\Sound\SoundStreamer.cs" />
+    <Compile Include="src\CatDog.cs" />
+    <Compile Include="src\Constants.cs" />
+    <Compile Include="src\FFMPEG.cs" />
+    <Compile Include="src\Utility\NumberSpeller.cs" />
+    <Compile Include="src\Effects\Reverb.cs" />
+    <Compile Include="src\Effects\Echo.cs" />
+    <Compile Include="src\Effects\EffectStream.cs" />
+    <Compile Include="src\Utility\ConsoleColorHelper.cs" />
+    <Compile Include="src\Effects\IEffect.cs" />
+    <Compile Include="src\Utility\MyLogger.cs" />
+    <Compile Include="src\Sound\Sound.cs" />
+    <Compile Include="src\Sound\SoundManager.cs" />
+    <Compile Include="src\Utility\ToolBox.cs" />
+    <Compile Include="src\Program.cs" />
+    <Compile Include="src\Youtube\YoutubeDownloader.cs" />
+    <Compile Include="src\Youtube\YoutubeException.cs" />
+    <Compile Include="src\Youtube\YoutubeVideoID.cs" />
+    <Compile Include="src\Youtube\YoutubeVideoName.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="BundtBot\Sound\SoundBoard.cs" />
+    <Compile Include="src\Sound\SoundBoard.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -262,7 +259,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="BundtBot\Commands\" />
+    <Folder Include="src\Commands\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

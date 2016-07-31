@@ -5,13 +5,15 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BundtBot", "BundtBot\BundtBot.csproj", "{CFBAE8A8-52B3-4AF0-8B73-CBDC243DBCD7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBot", "TestBot\TestBot.csproj", "{5F517E0C-9246-47ED-927C-858A9CAF24C8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BundtBotTest", "TestBot\BundtBotTest.csproj", "{5F517E0C-9246-47ED-927C-858A9CAF24C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net", "..\..\Discord.Net\src\Discord.Net.Net45\Discord.Net.csproj", "{8D71A857-879A-4A10-859E-5FF824ED6688}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.Audio", "..\..\Discord.Net\src\Discord.Net.Audio.Net45\Discord.Net.Audio.csproj", "{7BFEF748-B934-4621-9B11-6302E3A9F6B3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Net.Commands", "..\..\Discord.Net\src\Discord.Net.Commands.Net45\Discord.Net.Commands.csproj", "{1B5603B4-6F8F-4289-B945-7BAAE523D740}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.csproj", "{5940975B-084A-46F1-9D53-4A685E231570}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -54,6 +56,12 @@ Global
 		{1B5603B4-6F8F-4289-B945-7BAAE523D740}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1B5603B4-6F8F-4289-B945-7BAAE523D740}.TestResponses|Any CPU.ActiveCfg = Release|Any CPU
 		{1B5603B4-6F8F-4289-B945-7BAAE523D740}.TestResponses|Any CPU.Build.0 = Release|Any CPU
+		{5940975B-084A-46F1-9D53-4A685E231570}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5940975B-084A-46F1-9D53-4A685E231570}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5940975B-084A-46F1-9D53-4A685E231570}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5940975B-084A-46F1-9D53-4A685E231570}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5940975B-084A-46F1-9D53-4A685E231570}.TestResponses|Any CPU.ActiveCfg = Release|Any CPU
+		{5940975B-084A-46F1-9D53-4A685E231570}.TestResponses|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
