@@ -1,11 +1,13 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using BundtBot;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BundtBotTest {
     [TestClass]
     public class BundtBotTest {
         [TestMethod]
-        public void WriteBundtBotASCIIArtToConsole() {
-            global::BundtBot.BundtBot.WriteBundtBotASCIIArtToConsole();
+        public void BundtBot() {
+            var bundtBot = new global::BundtBot.BundtBot();
+            //bundtBot.Start();
         }
     }
 }

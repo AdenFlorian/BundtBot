@@ -85,7 +85,7 @@ namespace BundtBot {
             }
         }
 
-        public static void WriteBundtBotASCIIArtToConsole() {
+        static void WriteBundtBotASCIIArtToConsole() {
             MyLogger.NewLine();
             MyLogger.WriteLine(Constants.BundtbotASCIIArt, ConsoleColor.Red);
             MyLogger.NewLine();

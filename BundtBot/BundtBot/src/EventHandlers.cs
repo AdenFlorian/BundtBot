@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -84,7 +85,8 @@ namespace BundtBot {
                 MyLogger.Write("Server available! ");
                 MyLogger.WriteLine(e.Server.Name, ConsoleColorHelper.GetRoundRobinColor());
                 try {
-                    await e.Server.CurrentUser.Edit(nickname: "bundtbot v" + BundtBot.Version);
+                    var nickname = ConfigurationManager.AppSettings["BotNickName"];
+                    await e.Server.CurrentUser.Edit(nickname: nickname + " v" + BundtBot.Version);
                 } catch (HttpException ex) {
                     MyLogger.WriteLine($"{ex.GetType()} thrown from trying to change the bot's nickname",
                         ConsoleColor.DarkYellow);
