@@ -1,11 +1,11 @@
 ﻿using BundtBot.Utility;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace BundtBotTest {
+namespace BundtBotTest.Utility {
     [TestClass]
     public class ToolBoxTest {
         [TestMethod]
-        public void LevenshteinTest1() {
+        public void Levenshtein() {
             Assert.AreEqual(0, ToolBox.Levenshtein("x", "x"));
         }
     }

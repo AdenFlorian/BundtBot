@@ -187,7 +187,7 @@
     <Compile Include="src\Sound\SoundStreamer.cs" />
     <Compile Include="src\CatDog.cs" />
     <Compile Include="src\Constants.cs" />
-    <Compile Include="src\FFMPEG.cs" />
+    <Compile Include="src\FFMPEG\FFMPEG.cs" />
     <Compile Include="src\Utility\NumberSpeller.cs" />
     <Compile Include="src\Effects\Reverb.cs" />
     <Compile Include="src\Effects\Echo.cs" />

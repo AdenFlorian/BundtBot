@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using BundtBot.Utility;
 using NString;
 
-namespace BundtBot {
+namespace BundtBot.FFMPEG {
     public class FFMPEG {
         public async Task<FileInfo> FFMPEGConvertToWAVAsync(FileInfo fileToConvert) {
             return await FFMPEGConvert2Async(fileToConvert, ".wav");

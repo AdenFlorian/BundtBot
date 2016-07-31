@@ -61,16 +61,14 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="BundtBot\CatDogTest.cs" />
-    <Compile Include="ToolBoxTest.cs" />
+    <Compile Include="src\CatDogTest.cs" />
+    <Compile Include="src\Utility\ToolBoxTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="FFMPEG\FFMPEGTest.cs" />
-    <Compile Include="BundtBot\BundtBotTest.cs" />
+    <Compile Include="src\FFMPEG\FFMPEGTest.cs" />
+    <Compile Include="src\BundtBotTest.cs" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <None Include="app.config" />
-    <None Include="FFMPEG\TestFiles\test.opus">
+    <None Include="data\test.opus">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />

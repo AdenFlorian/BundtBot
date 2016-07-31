@@ -408,7 +408,7 @@ namespace BundtBot {
                             new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, haikuUrl.AbsoluteUri,
                                 songCachePath);
                     var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
-                    var outputWAVFile = await new FFMPEG().FFMPEGConvertToWAVAsync(youtubeOutput);
+                    var outputWAVFile = await new FFMPEG.FFMPEG().FFMPEGConvertToWAVAsync(youtubeOutput);
                     await msg.Edit(msg.Text + "finished!");
 
                     if (outputWAVFile.Exists == false) {
@@ -496,7 +496,7 @@ namespace BundtBot {
             FileInfo audioClipPath;
 
             if (youtubeOutput.Extension != "mp3") {
-                audioClipPath = await new FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
+                audioClipPath = await new FFMPEG.FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
             } else {
                 audioClipPath = youtubeOutput;
             }
@@ -523,7 +523,7 @@ namespace BundtBot {
             FileInfo audioClipPath;
 
             if (youtubeOutput.Extension != "mp3") {
-                audioClipPath = await new FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
+                audioClipPath = await new FFMPEG.FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
             } else {
                 audioClipPath = youtubeOutput;
             }
