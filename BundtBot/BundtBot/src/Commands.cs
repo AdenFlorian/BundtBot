@@ -348,8 +348,14 @@ namespace BundtBot {
 
                     AudioClip audioClip;
 
-                    var youtubeVideoID = await GetYoutubeVideoIdBySearchString(ytSearchString);
-
+                    string youtubeVideoID;
+                    
+                    if (YoutubeHelper.IsYoutubeUrl(ytSearchString)) {
+                        youtubeVideoID = YoutubeHelper.GetVideoIdFromUrl(ytSearchString);
+                    } else {
+                        youtubeVideoID = await GetYoutubeVideoIdBySearchString(ytSearchString);
+                    }
+                    
                     if (AudioClip.TryGetAudioClipByYoutubeId(youtubeVideoID, out audioClip)) {
                         audioClip.AddSearchString(ytSearchString);
                     }

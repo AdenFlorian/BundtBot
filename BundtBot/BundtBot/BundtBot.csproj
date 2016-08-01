@@ -201,6 +201,7 @@
     <Compile Include="src\Program.cs" />
     <Compile Include="src\Youtube\YoutubeDownloader.cs" />
     <Compile Include="src\Youtube\YoutubeException.cs" />
+    <Compile Include="src\Youtube\YoutubeHelper.cs" />
     <Compile Include="src\Youtube\YoutubeVideoID.cs" />
     <Compile Include="src\Youtube\YoutubeVideoName.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
