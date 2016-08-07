@@ -6,6 +6,8 @@ using LiteDB;
 namespace BundtBot.Models {
     public class User {
         [BsonId]
+        public ObjectId Id { get; set; }
+        [BsonIndex]
         public ulong SnowflakeId { get; set; }
 
         internal static User New(ulong snowflakeId) {
