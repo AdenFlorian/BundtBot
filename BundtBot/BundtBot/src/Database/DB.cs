@@ -3,7 +3,7 @@ using LiteDB;
 
 namespace BundtBot.Database {
     static class DB {
-        static readonly LiteDatabase _db = new LiteDatabase("MyData.db");
+        static readonly LiteDatabase _db = new LiteDatabase("BundtBot.db");
 
         public static LiteCollection<AudioClip> AudioClips => _db.GetCollection<AudioClip>("AudioClips");
         public static LiteCollection<AudioClipVote> AudioClipVotes => _db.GetCollection<AudioClipVote>("AudioClipVotes");
