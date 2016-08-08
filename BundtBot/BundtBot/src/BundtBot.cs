@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Text;
 using BundtBot.Sound;
 using BundtBot.Utility;
 using Discord;
@@ -32,7 +31,6 @@ namespace BundtBot {
         }
 
         public void Start() {
-            InitConsole();
             InitVersion();
             InitClient();
 
@@ -62,13 +60,6 @@ namespace BundtBot {
                 x.PrefixChar = ConfigurationManager.AppSettings["CommandPrefix"][0];
                 x.HelpMode = HelpMode.Public;
             });
-        }
-
-        static void InitConsole() {
-            // Allows stuff like ʘ ͜ʖ ʘ to show in the Console
-            Console.OutputEncoding = Encoding.UTF8;
-            Console.WindowHeight = (int)(Console.LargestWindowHeight * 0.9);
-            Console.WindowTop = 0;
         }
 
         static void InitVersion() {

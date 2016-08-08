@@ -12,7 +12,7 @@ namespace BundtBot.Sound {
         volatile float _volume;
         volatile float _volumeOverride;
 
-        public void SetVolumeOfCurrentClip(float newVolume) {
+        public void SetVolumeOfCurrentTrack(float newVolume) {
             // Just an extra check to keep the bot from blowing people's ears out
             if (newVolume > 1.1f) {
                 throw new ArgumentException("Volume should never be greater than 1!");
@@ -36,20 +36,20 @@ namespace BundtBot.Sound {
             _volumeOverride = -1;
         }
 
-        public void PlaySound(AudioService audioService, IAudioClient audioClient, Sound sound) {
+        public void PlaySound(AudioService audioService, IAudioClient audioClient, TrackRequest trackRequest) {
             var channels = audioService.Config.Channels;
             var timePlayed = 0;
             var outFormat = new WaveFormat(48000, 16, channels);
 
-            SetVolumeOfCurrentClip(sound.Volume);
+            SetVolumeOfCurrentTrack(trackRequest.Volume);
 
-            using (var audioFileStream = new MediaFoundationReader(sound.AudioClip.Path))
+            using (var audioFileStream = new MediaFoundationReader(trackRequest.Track.Path))
             using (var waveChannel32 = new WaveChannel32(audioFileStream, (_volumeOverride > 0 ? _volumeOverride : _volume) * 0.2f, 0f) { PadWithZeroes = false })
             using (var effectStream = new EffectStream(waveChannel32))
             using (var blockAlignmentStream = new BlockAlignReductionStream(effectStream))
             using (var resampler = new MediaFoundationResampler(blockAlignmentStream, outFormat)) {
                 resampler.ResamplerQuality = 60;
-                ApplyEffects(waveChannel32, effectStream, sound);
+                ApplyEffects(waveChannel32, effectStream, trackRequest);
 
                 // Establish the size of our AudioBuffer
                 var blockSize = outFormat.AverageBytesPerSecond / 50;
@@ -62,7 +62,7 @@ namespace BundtBot.Sound {
 
                     // Limit play length (--length)
                     timePlayed += byteCount * 1000 / outFormat.AverageBytesPerSecond;
-                    if (sound.TimeLimit > 0 && timePlayed > sound.TimeLimit) {
+                    if (trackRequest.TimeLimit > 0 && timePlayed > trackRequest.TimeLimit) {
                         break;
                     }
 
@@ -95,19 +95,19 @@ namespace BundtBot.Sound {
             audioClient.Wait();
         }
 
-        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, Sound sound) {
+        static void ApplyEffects(IWaveProvider waveChannel32, EffectStream effectStream, TrackRequest trackRequest) {
             for (var i = 0; i < waveChannel32.WaveFormat.Channels; i++) {
-                if (sound.Echo) {
-                    if (sound.EchoLength > 0) {
-                        if (sound.EchoFactor > 0) {
-                            effectStream.Effects.Add(new Echo(sound.EchoLength, sound.EchoFactor));
+                if (trackRequest.Echo) {
+                    if (trackRequest.EchoLength > 0) {
+                        if (trackRequest.EchoFactor > 0) {
+                            effectStream.Effects.Add(new Echo(trackRequest.EchoLength, trackRequest.EchoFactor));
                         } else {
-                            effectStream.Effects.Add(new Echo(sound.EchoLength));
+                            effectStream.Effects.Add(new Echo(trackRequest.EchoLength));
                         }
                     } else {
                         effectStream.Effects.Add(new Echo());
                     }
-                } else if (sound.Reverb) {
+                } else if (trackRequest.Reverb) {
                     effectStream.Effects.Add(new Reverb());
                 }
             }

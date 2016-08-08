@@ -51,19 +51,19 @@ namespace BundtBot.Sound {
             return true;
         }
         
-        public static void ParseArgs(IEnumerable<string> args, ref Sound sound) {
+        public static void ParseArgs(IEnumerable<string> args, ref TrackRequest trackRequest) {
             foreach (var arg in args) {
                 if (arg.StartsWith("--length:") &&
                     arg.Length > 9) {
                     try {
-                        sound.TimeLimit = (int)(float.Parse(arg.Substring(9)) * 1000);
+                        trackRequest.TimeLimit = (int)(float.Parse(arg.Substring(9)) * 1000);
                     } catch (Exception) {
                         throw new ArgumentException("badly formed length value");
                     }
-                    if (sound.TimeLimit <= 0) {
+                    if (trackRequest.TimeLimit <= 0) {
                         throw new ArgumentException("invalid length value, must be a positive foat");
                     }
-                    MyLogger.WriteLine("Parsed " + arg + " into " + sound.TimeLimit + " milliseconds");
+                    MyLogger.WriteLine("Parsed " + arg + " into " + trackRequest.TimeLimit + " milliseconds");
                 } else if ((arg.StartsWith("--volume:") &&
                     arg.Length > 9) ||
                     (arg.StartsWith("--vol:") &&
@@ -75,30 +75,30 @@ namespace BundtBot.Sound {
                         if (intVolume < 1 || intVolume > 11) {
                             throw new ArgumentException("invalid volume, must be an integer from 1 to 10");
                         }
-                        sound.Volume = intVolume / 10f;
-                        MyLogger.WriteLine("Parsed " + arg + " into " + sound.Volume);
+                        trackRequest.Volume = intVolume / 10f;
+                        MyLogger.WriteLine("Parsed " + arg + " into " + trackRequest.Volume);
                     } catch (Exception) {
                         throw new ArgumentException("badly formed volume value");
                     }
                 } else if (arg.StartsWith("--echo")) {
-                    sound.Echo = true;
+                    trackRequest.Echo = true;
                     if (arg == "--echo") {
                         MyLogger.WriteLine("Parsed " + arg);
                     } else {
                         var parts = arg.Split(':');
                         if (parts.Length <= 1) continue;
-                        sound.EchoLength = (int)(float.Parse(parts[1]) * 1000);
-                        if (sound.EchoLength <= 0 || sound.EchoLength > 50000) {
+                        trackRequest.EchoLength = (int)(float.Parse(parts[1]) * 1000);
+                        if (trackRequest.EchoLength <= 0 || trackRequest.EchoLength > 50000) {
                             throw new ArgumentException("bad echo length");
                         }
                         if (parts.Length <= 2) continue;
-                        sound.EchoFactor = (float)int.Parse(parts[2]) / 10;
-                        if (sound.EchoFactor <= 0 || sound.EchoFactor > 1f) {
+                        trackRequest.EchoFactor = (float)int.Parse(parts[2]) / 10;
+                        if (trackRequest.EchoFactor <= 0 || trackRequest.EchoFactor > 1f) {
                             throw new ArgumentException("bad echo factor");
                         }
                     }
                 } else if (arg.StartsWith("--reverb")) {
-                    sound.Reverb = true;
+                    trackRequest.Reverb = true;
                     MyLogger.WriteLine("Parsed " + arg);
                 } else {
                     throw new ArgumentException("argument not found");

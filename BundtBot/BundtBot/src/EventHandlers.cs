@@ -177,23 +177,23 @@ namespace BundtBot {
             MyLogger.WriteLine("User joined a voice channel. Sending: " + x.Item1 + " " + x.Item2);
             FileInfo soundFile;
             if (soundBoard.TryGetSoundPath(x.Item1, x.Item2, out soundFile) == false) {
-                MyLogger.WriteException(new FileNotFoundException("Couldn't Find Sound but should have"));
+                MyLogger.WriteException(new FileNotFoundException("Couldn't Find TrackRequest but should have"));
                 return;
             }
 
-            var audioClip = new AudioClip {
+            var track = new Track {
                 Path = soundFile.FullName,
                 Title = $"{x.Item1}: {x.Item2}"
             };
 
-            var sound = new Sound.Sound(audioClip, e.Channel.Server.DefaultChannel, e.Channel) { TextUpdates = false };
+            var sound = new TrackRequest(track, e.Channel.Server.DefaultChannel, e.Channel) { TextUpdates = false };
             soundManager.EnqueueSound(sound);
         }
 
         static async Task OnUserLeftVoiceChannel(ChannelUserEventArgs e, SoundManager soundManager) {
             if (e.Channel != soundManager.VoiceChannel) return;
             if (e.Channel.Users.Count() > 1) return;
-            if (soundManager.CurrentlyPlayingSound.TextUpdates) {
+            if (soundManager.CurrentlyPlayingTrackRequest.TextUpdates) {
                 await e.Channel.Server.DefaultChannel.SendMessageEx("sorry i bothered you with my 🎶");
             }
             MyLogger.WriteLine("[Program] OnUserLeftVoiceChannel - Telling SoundManager to stop," +

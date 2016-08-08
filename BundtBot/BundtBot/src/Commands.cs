@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using BundtBot.Database;
@@ -15,7 +14,6 @@ using BundtBot.Youtube;
 using Discord.Commands;
 using NString;
 using Octokit;
-using User = BundtBot.Models.User;
 
 namespace BundtBot {
     class Commands {
@@ -181,7 +179,7 @@ namespace BundtBot {
                 });
             commandService.CreateCommand("next")
                 .Alias("skip")
-                .Description("Play the next sound.")
+                .Description("Play the next Track.")
                 .Do(async e => {
                     if (soundManager.IsPlaying == false) {
                         await e.Channel.SendMessageEx("there's nothing to skip");
@@ -196,12 +194,12 @@ namespace BundtBot {
                         soundManager.Skip();
                         await
                             msg.Edit(msg.Text +
-                                     "Clip has been terminated, and it's parents have been notified. The next clip in line has taken its place. How do you sleep at night.");
+                                     "Track has been terminated, and it's parents have been notified. The next track in line has taken its place. How do you sleep at night.");
                     }
                 });
             commandService.CreateCommand("upnext")
                 .Alias("whatsnext", "peek")
-                .Description("look at next clip")
+                .Description("look at next track")
                 .Do(async e => {
                     if (soundManager.IsPlaying == false) {
                         await e.Channel.SendMessageEx("there's nothing up next, because nothing is even playing...");
@@ -215,7 +213,7 @@ namespace BundtBot {
                             await e.Channel.SendMessageEx("i thought there was something up next, " +
                                                           "but i may have been wrong, so, umm, sorry?");
                         } else {
-                            await e.Channel.SendMessageEx($"Up Next: **{nextSound.AudioClip.Title}**");
+                            await e.Channel.SendMessageEx($"Up Next: **{nextSound.Track.Title}**");
                         }
                     }
                 });
@@ -225,51 +223,52 @@ namespace BundtBot {
                         await e.Channel.SendMessageEx("nothing");
                         return;
                     }
-                    await e.Channel.SendMessageEx($"**{soundManager.CurrentlyPlayingSound.AudioClip.Title}**");
+                    await e.Channel.SendMessageEx($"**{soundManager.CurrentlyPlayingTrackRequest.Track.Title}**");
                 });
             commandService.CreateCommand("like")
                 .Alias("thumbsup", "upvote", "👍")
                 .Description("bundtbot for president 2020")
                 .Do(async e => {
                     // Find out what song is playing
-                    var currentSound = soundManager.CurrentlyPlayingSound;
+                    var currentSound = soundManager.CurrentlyPlayingTrackRequest;
 
                     if (currentSound == null) {
                         await e.Channel.SendMessageEx($"what's to like? nothing is playing...");
                         return;
                     }
 
-                    var clip = DB.AudioClips.FindById(currentSound.AudioClip.Id);
+                    var user = DB.Users.FindOne(x => x.SnowflakeId == e.User.Id);
+                    var track = DB.Tracks.FindById(currentSound.Track.Id);
+                    var likes = DB.Likes.Find(x => x.UserId == user.Id);
 
-                    var usersLikes = DB.AudioClipVotes.Find(x => x.User.SnowflakeId == e.User.Id);
-                    if (usersLikes.Any(x => x.AudioClip.Id == clip.Id) == false) {
-                        DB.AudioClipVotes.Insert(new AudioClipVote {
-                            User = new User { SnowflakeId = e.User.Id },
-                            AudioClip = clip
+                    if (likes.Any(x => x.TrackId == track.Id) == false) {
+                        DB.Likes.Insert(new Like {
+                            UserId = user.Id,
+                            TrackId = track.Id
                         });
-                        await e.Channel.SendMessageEx($"i like **{clip.Title}** too 😎");
+                        await e.Channel.SendMessageEx($"i like **{track.Title}** too 😎");
                     } else {
-                        await e.Channel.SendMessageEx($"i already know that you like **{clip.Title}**");
+                        await e.Channel.SendMessageEx($"i already know that you like **{track.Title}**");
                     }
                 });
             commandService.CreateCommand("mylikes")
                 .Do(async e => {
-                    var likes = DB.AudioClipVotes
-                        .Include(x => x.User)
-                        .Find(x => x.User.SnowflakeId == e.User.Id);
+                    var user = DB.Users.FindOne(x => x.SnowflakeId == e.User.Id);
+                    var likes = DB.Likes
+                        .Find(x => x.UserId == user.Id);
                     var msg = "**Your Likes:**\n";
-                    likes.ToList().ForEach(x => msg += x.AudioClip.Title + "\n");
+                    likes.ToList().ForEach(x => msg += DB.Tracks.FindById(x.TrackId).Title + "\n");
                     await e.User.SendMessage(msg);
                 });
             commandService.CreateCommand("sb")
                 .Alias("owsb")
                 .Description("Sound board. It plays sounds with its mouth.")
-                .Parameter("sound args", ParameterType.Unparsed)
+                .Parameter("Sound args", ParameterType.Unparsed)
                 .Do(async e => {
                     // Command should have 3 words separated by spaces
                     // 1. !owsb (or !sb)
                     // 2. actor
-                    // 3. the sound name (can be multiple words)
+                    // 3. the Sound name (can be multiple words)
                     // So, if we split by spaces, we should have at least 3 parts
                     var actorAndSoundString = e.Args[0].ToLower();
 
@@ -299,12 +298,12 @@ namespace BundtBot {
                         return;
                     }
 
-                    var audioClip = new AudioClip {
+                    var track = new Track {
                         Path = soundFile.FullName,
                         Title = $"{soundFile.Directory?.Name}: {soundFile.Name}"
                     };
 
-                    var sound = new Sound.Sound(audioClip, e.Channel, e.User.VoiceChannel);
+                    var sound = new Sound.TrackRequest(track, e.Channel, e.User.VoiceChannel);
 
                     try {
                         if (args.Count > 0) {
@@ -346,7 +345,7 @@ namespace BundtBot {
                         return;
                     }
 
-                    AudioClip audioClip;
+                    Track track;
 
                     string youtubeVideoID;
                     
@@ -356,19 +355,19 @@ namespace BundtBot {
                         youtubeVideoID = await GetYoutubeVideoIdBySearchString(ytSearchString);
                     }
                     
-                    if (AudioClip.TryGetAudioClipByYoutubeId(youtubeVideoID, out audioClip)) {
-                        audioClip.AddSearchString(ytSearchString);
+                    if (Track.TryGetTrackByYoutubeId(youtubeVideoID, out track)) {
+                        track.AddSearchString(ytSearchString);
                     }
 
-                    if (audioClip == null) {
-                        audioClip = await GetAudioClipByYoutubeId(e, youtubeVideoID, songCachePath);
-                        if (audioClip == null) return;
-                        audioClip.AddSearchString(ytSearchString);
-                    } else if (File.Exists(audioClip.Path) == false) {
-                        await RedownloadAudioClip(e, audioClip, songCachePath);
+                    if (track == null) {
+                        track = await GetTrackByYoutubeId(e, youtubeVideoID, songCachePath);
+                        if (track == null) return;
+                        track.AddSearchString(ytSearchString);
+                    } else if (File.Exists(track.Path) == false) {
+                        await RedownloadTrack(e, track, songCachePath);
                     }
 
-                    var sound = new Sound.Sound(audioClip, e.Channel, voiceChannel) {
+                    var sound = new Sound.TrackRequest(track, e.Channel, voiceChannel) {
                         DeleteAfterPlay = false
                     };
 
@@ -424,12 +423,12 @@ namespace BundtBot {
 
                     var youtubeVideoTitle = await new YoutubeVideoName().Get(haikuUrl.AbsoluteUri);
 
-                    var clip = new AudioClip {
+                    var track = new Track {
                         Title = youtubeVideoTitle,
                         Path = outputWAVFile.FullName
                     };
 
-                    var sound = new Sound.Sound(clip, e.Channel, voiceChannel) {
+                    var sound = new Sound.TrackRequest(track, e.Channel, voiceChannel) {
                         DeleteAfterPlay = true
                     };
 
@@ -466,7 +465,7 @@ namespace BundtBot {
                 .Do(async e => {
                     try {
                         var desiredVolume = float.Parse(e.Args[0]) / 10f;
-                        soundManager.SetVolumeOfCurrentClip(desiredVolume);
+                        soundManager.SetVolumeOfCurrentTrack(desiredVolume);
                         await e.Channel.SendMessageEx("is dat betta?");
                     } catch (Exception) {
                         await e.Channel.SendMessageEx("wat did u doo to dah volumez");
@@ -477,15 +476,15 @@ namespace BundtBot {
         }
 
         static async Task<string> GetYoutubeVideoIdBySearchString(string ytSearchString) {
-            AudioClip audioClip;
+            Track track;
 
-            if (AudioClip.TryGetAudioClipByYoutubeSearchString(ytSearchString, out audioClip))
-                return audioClip.YoutubeId;
+            if (Track.TryGetTrackByYoutubeSearchString(ytSearchString, out track))
+                return track.YoutubeId;
 
             return await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
         }
 
-        static async Task<AudioClip> GetAudioClipByYoutubeId(CommandEventArgs e, string youtubeVideoID, string songCachePath) {
+        static async Task<Track> GetTrackByYoutubeId(CommandEventArgs e, string youtubeVideoID, string songCachePath) {
             var youtubeUrl = "https://www.youtube.com/watch?v=" + youtubeVideoID;
 
             // Get video title
@@ -499,51 +498,51 @@ namespace BundtBot {
 
             var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
 
-            FileInfo audioClipPath;
+            FileInfo trackPath;
 
             if (youtubeOutput.Extension != "mp3") {
-                audioClipPath = await new FFMPEG.FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
+                trackPath = await new FFMPEG.FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
             } else {
-                audioClipPath = youtubeOutput;
+                trackPath = youtubeOutput;
             }
 
             await msg.Edit(msg.Text + "finished!");
 
-            if (audioClipPath.Exists == false) {
+            if (trackPath.Exists == false) {
                 await e.Channel.SendMessageEx("that video doesn't work, sorry, try something else");
                 return null;
             }
 
-            return AudioClip.NewAudioClip(youtubeVideoTitle, audioClipPath, youtubeVideoID);
+            return Track.NewTrack(youtubeVideoTitle, trackPath, youtubeVideoID);
         }
 
-        static async Task RedownloadAudioClip(CommandEventArgs e, AudioClip audioClip, string songCachePath) {
-            var youtubeUrl = "https://www.youtube.com/watch?v=" + audioClip.YoutubeId;
+        static async Task RedownloadTrack(CommandEventArgs e, Track track, string songCachePath) {
+            var youtubeUrl = "https://www.youtube.com/watch?v=" + track.YoutubeId;
 
-            await e.Channel.SendMessageEx($"Redownloading video: **{audioClip.Title}**");
+            await e.Channel.SendMessageEx($"Redownloading video: **{track.Title}**");
 
             var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeUrl, songCachePath);
 
             var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
 
-            FileInfo audioClipPath;
+            FileInfo trackPath;
 
             if (youtubeOutput.Extension != "mp3") {
-                audioClipPath = await new FFMPEG.FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
+                trackPath = await new FFMPEG.FFMPEG().FFMPEGConvertToMP3Async(youtubeOutput);
             } else {
-                audioClipPath = youtubeOutput;
+                trackPath = youtubeOutput;
             }
 
             await msg.Edit(msg.Text + "finished!");
 
-            if (audioClipPath.Exists == false) {
+            if (trackPath.Exists == false) {
                 await e.Channel.SendMessageEx("that video doesn't work, sorry, try something else");
-                throw new YoutubeException("Sound file didn't exist after download and conversion");
+                throw new YoutubeException("TrackRequest file didn't exist after download and conversion");
             }
 
-            audioClip.Path = audioClipPath.FullName;
+            track.Path = trackPath.FullName;
 
-            audioClip.Save();
+            track.Save();
         }
     }
 }

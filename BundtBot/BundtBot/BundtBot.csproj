@@ -173,14 +173,14 @@
     <Compile Include="src\Commands.cs" />
     <Compile Include="src\Database\DB.cs" />
     <Compile Include="src\EventHandlers.cs" />
-    <Compile Include="src\Models\AudioClipVote.cs" />
+    <Compile Include="src\Models\Like.cs" />
     <Compile Include="src\Models\User.cs" />
     <Compile Include="src\Youtube\AudioDownloader.cs" />
     <Compile Include="src\Extensions\ChannelExtensions.cs" />
     <Compile Include="src\Extensions\DiscordNetExtensions.cs" />
     <Compile Include="src\Extensions\FileInfoExtensions.cs" />
     <Compile Include="src\Extensions\ListExtensions.cs" />
-    <Compile Include="src\Models\AudioClip.cs" />
+    <Compile Include="src\Models\Track.cs" />
     <Compile Include="src\Models\YoutubeSearchString.cs" />
     <Compile Include="src\Youtube\ProgressEventArgs.cs" />
     <Compile Include="src\Reddit\RedditManager.cs" />
@@ -195,7 +195,7 @@
     <Compile Include="src\Utility\ConsoleColorHelper.cs" />
     <Compile Include="src\Effects\IEffect.cs" />
     <Compile Include="src\Utility\MyLogger.cs" />
-    <Compile Include="src\Sound\Sound.cs" />
+    <Compile Include="src\Sound\TrackRequest.cs" />
     <Compile Include="src\Sound\SoundManager.cs" />
     <Compile Include="src\Utility\ToolBox.cs" />
     <Compile Include="src\Program.cs" />
