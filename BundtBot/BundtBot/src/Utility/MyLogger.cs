@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using NString;
 
 namespace BundtBot.Utility {
@@ -75,6 +77,16 @@ namespace BundtBot.Utility {
             }
             WriteLine(exception.Message, ConsoleColor.Red);
             WriteLine(exception.StackTrace, ConsoleColor.Red);
+        }
+
+        public static void Info(string message, [CallerMemberName] string memberName = "") {
+            Info(message, DefaultColor, memberName);
+        }
+
+        public static void Info(string message, ConsoleColor color, [CallerMemberName] string memberName = "") {
+            Console.ForegroundColor = color;
+            WriteLine($"[{memberName}] {message}");
+            Console.ForegroundColor = DefaultColor;
         }
     }
 }

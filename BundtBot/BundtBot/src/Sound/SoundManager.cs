@@ -47,10 +47,10 @@ namespace BundtBot.Sound {
                     if (trackRequest.TextUpdates) {
                         var volumeOverride = _audioStreamer.GetVolumeOverride();
                         if (volumeOverride > 0) {
-                            await trackRequest.TextChannel.SendMessageEx($"Playing `{trackRequest.Track.Title}` at *Override Volume* **{volumeOverride * 10}**");
+                            await trackRequest.TextChannel.SendMessageEx($"Playing **{trackRequest.Track.Title}** at *Override Volume* **{volumeOverride * 10}**");
                         }
                         else {
-                            await trackRequest.TextChannel.SendMessageEx($"Playing `{trackRequest.Track.Title}` at Volume **{trackRequest.Volume * 10}**");
+                            await trackRequest.TextChannel.SendMessageEx($"Playing **{trackRequest.Track.Title}** at Volume **{trackRequest.Volume * 10}**");
                         }
                     }
 

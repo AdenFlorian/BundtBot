@@ -258,7 +258,7 @@ namespace BundtBot {
                         .Find(x => x.UserId == user.Id);
                     var msg = "**Your Likes:**\n";
                     likes.ToList().ForEach(x => msg += DB.Tracks.FindById(x.TrackId).Title + "\n");
-                    await e.User.SendMessage(msg);
+                    await e.User.SendMessageEx(msg);
                 });
             commandService.CreateCommand("sb")
                 .Alias("owsb")
@@ -421,7 +421,7 @@ namespace BundtBot {
                         return;
                     }
 
-                    var youtubeVideoTitle = await new YoutubeVideoName().Get(haikuUrl.AbsoluteUri);
+                    var youtubeVideoTitle = await new Youtube.Youtube().GetVideoTitle(haikuUrl.AbsoluteUri);
 
                     var track = new Track {
                         Title = youtubeVideoTitle,
@@ -481,7 +481,7 @@ namespace BundtBot {
             if (Track.TryGetTrackByYoutubeSearchString(ytSearchString, out track))
                 return track.YoutubeId;
 
-            return await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
+            return await new Youtube.Youtube().GetVideoId($"\"ytsearch1:{ytSearchString}\"");
         }
 
         static async Task<Track> GetTrackByYoutubeId(CommandEventArgs e, string youtubeVideoID, string songCachePath) {
@@ -489,7 +489,7 @@ namespace BundtBot {
 
             // Get video title
             MyLogger.WriteLine("Getting youtube video title...");
-            var youtubeVideoTitle = await new YoutubeVideoName().Get(youtubeUrl);
+            var youtubeVideoTitle = await new Youtube.Youtube().GetVideoTitle(youtubeUrl);
             MyLogger.WriteLine("Youtube video title get! " + youtubeVideoTitle, ConsoleColor.Green);
 
             await e.Channel.SendMessageEx($"Found video: **{youtubeVideoTitle}**");

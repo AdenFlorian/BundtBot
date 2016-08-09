@@ -67,6 +67,7 @@
     <Compile Include="src\FFMPEG\FFMPEGTest.cs" />
     <Compile Include="src\BundtBotTest.cs" />
     <Compile Include="src\Youtube\YoutubeHelperTests.cs" />
+    <Compile Include="src\Youtube\YoutubeTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
