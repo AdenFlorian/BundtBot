@@ -19,7 +19,7 @@ namespace BundtBot {
         readonly SoundManager _soundManager = new SoundManager();
         readonly DiscordClient _client;
 
-        static readonly string _songCachePath = ConfigurationManager.AppSettings["SongCacheFolder"];
+        static readonly DirectoryInfo _songCacheFolder = new DirectoryInfo(ConfigurationManager.AppSettings["SongCacheFolder"]);
         static readonly string _botTokenPath = ConfigurationManager.AppSettings["BotTokenPath"];
 
         public BundtBot() {
@@ -39,7 +39,7 @@ namespace BundtBot {
             MyLogger.NewLine();
 
             var commandService = _client.GetService<CommandService>();
-            Commands.Register(commandService, _soundManager, _soundBoard, _songCachePath);
+            Commands.Register(commandService, _soundManager, _soundBoard, _songCacheFolder);
 
             EventHandlers.RegisterEventHandlers(_client, _soundBoard, _soundManager);
 

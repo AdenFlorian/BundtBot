@@ -36,12 +36,12 @@ namespace BundtBot.FFMPEG {
 
             ffmpegProcess.OutputDataReceived += (sender, ev) => {
                 if (ev.Data.IsNullOrWhiteSpace()) return;
-                MyLogger.Write("[FFMPEG] ", ConsoleColor.Cyan);
+                MyLogger.Write("[FFMPEG (stdout)] ", ConsoleColor.Cyan);
                 MyLogger.WriteLine(ev.Data);
             };
             ffmpegProcess.ErrorDataReceived += (sender, ev) => {
                 if (ev.Data.IsNullOrWhiteSpace()) return;
-                MyLogger.Write("[FFMPEG ERROR] ", ConsoleColor.DarkMagenta);
+                MyLogger.Write("[FFMPEG (stderr)] ", ConsoleColor.DarkMagenta);
                 MyLogger.WriteLine(ev.Data);
             };
 

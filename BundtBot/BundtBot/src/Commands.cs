@@ -17,7 +17,7 @@ using Octokit;
 
 namespace BundtBot {
     class Commands {
-        public static void Register(CommandService commandService, SoundManager soundManager, SoundBoard soundBoard, string songCachePath) {
+        public static void Register(CommandService commandService, SoundManager soundManager, SoundBoard soundBoard, DirectoryInfo _songCacheFolder) {
 
             #region CommandEvents
 
@@ -360,11 +360,11 @@ namespace BundtBot {
                     }
 
                     if (track == null) {
-                        track = await GetTrackByYoutubeId(e, youtubeVideoID, songCachePath);
+                        track = await DownloadTrackByYoutubeId(e, youtubeVideoID, _songCacheFolder);
                         if (track == null) return;
                         track.AddSearchString(ytSearchString);
                     } else if (File.Exists(track.Path) == false) {
-                        await RedownloadTrack(e, track, songCachePath);
+                        await RedownloadTrack(e, track, _songCacheFolder);
                     }
 
                     var sound = new Sound.TrackRequest(track, e.Channel, voiceChannel) {
@@ -411,7 +411,7 @@ namespace BundtBot {
                     var youtubeOutput =
                         await
                             new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, haikuUrl.AbsoluteUri,
-                                songCachePath);
+                                _songCacheFolder);
                     var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
                     var outputWAVFile = await new FFMPEG.FFMPEG().FFMPEGConvertToWAVAsync(youtubeOutput);
                     await msg.Edit(msg.Text + "finished!");
@@ -484,7 +484,7 @@ namespace BundtBot {
             return await new YoutubeVideoID().Get($"\"ytsearch1:{ytSearchString}\"");
         }
 
-        static async Task<Track> GetTrackByYoutubeId(CommandEventArgs e, string youtubeVideoID, string songCachePath) {
+        static async Task<Track> DownloadTrackByYoutubeId(CommandEventArgs e, string youtubeVideoID, DirectoryInfo songCacheFolder) {
             var youtubeUrl = "https://www.youtube.com/watch?v=" + youtubeVideoID;
 
             // Get video title
@@ -494,7 +494,7 @@ namespace BundtBot {
 
             await e.Channel.SendMessageEx($"Found video: **{youtubeVideoTitle}**");
 
-            var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeUrl, songCachePath);
+            var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeUrl, songCacheFolder);
 
             var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
 
@@ -516,12 +516,12 @@ namespace BundtBot {
             return Track.NewTrack(youtubeVideoTitle, trackPath, youtubeVideoID);
         }
 
-        static async Task RedownloadTrack(CommandEventArgs e, Track track, string songCachePath) {
+        static async Task RedownloadTrack(CommandEventArgs e, Track track, DirectoryInfo songCacheFolder) {
             var youtubeUrl = "https://www.youtube.com/watch?v=" + track.YoutubeId;
 
             await e.Channel.SendMessageEx($"Redownloading video: **{track.Title}**");
 
-            var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeUrl, songCachePath);
+            var youtubeOutput = await new YoutubeDownloader().YoutubeDownloadAndConvertAsync(e, youtubeUrl, songCacheFolder);
 
             var msg = await e.Channel.SendMessageEx("Download finished! Converting audio...");
 

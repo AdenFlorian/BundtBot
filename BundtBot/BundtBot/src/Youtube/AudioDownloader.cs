@@ -25,7 +25,6 @@ namespace BundtBot.Youtube {
         public decimal Percentage { get; set; }
         public Process Process { get; set; }
         public string OutputName { get; set; }
-        public string DestinationFolder { get; set; }
         public string Url { get; set; }
 
         public string ConsoleLog { get; set; }
@@ -33,13 +32,12 @@ namespace BundtBot.Youtube {
         public FileInfo FinishedOutputFilePath { get; private set; }
 
 
-        public AudioDownloader(string url, string outputName, string outputfolder)
+        public AudioDownloader(string url, string outputName, DirectoryInfo outputfolder)
         {
             Started = false;
             Finished = false;
             Percentage = 0;
-
-            DestinationFolder = outputfolder;
+			
             Url = url;
 
             // make sure filename ends with an mp3 extension
@@ -62,7 +60,7 @@ namespace BundtBot.Youtube {
             //{
             //    throw new Exception(destinationPath + " exists");
             //}
-            var arguments = $@"--max-filesize 100m --extract-audio {url} -o {outputfolder}%(id)s.%(ext)s";  //--ignore-errors
+            var arguments = $@"--max-filesize 100m --extract-audio {url} -o {outputfolder.FullName}/%(id)s.%(ext)s";  //--ignore-errors
 
             var fullPathToEXE = Path.Combine(binaryPath, "youtube-dl.exe");
 
