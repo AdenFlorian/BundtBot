@@ -9,6 +9,7 @@ using Discord;
 using Discord.Audio;
 using Discord.Commands;
 using NString;
+using Discord.Net;
 
 namespace BundtBot {
     public class BundtBot {
@@ -44,9 +45,14 @@ namespace BundtBot {
             EventHandlers.RegisterEventHandlers(_client, _soundBoard, _soundManager);
 
             while (true) {
-                try {
-                    _client.ExecuteAndWait(async () => await _client.Connect(LoadBotToken()));
-                } catch (Exception ex) {
+				try {
+					_client.ExecuteAndWait(async () => await _client.Connect(LoadBotToken()));
+				} catch (HttpException httpException) {
+					MyLogger.WriteLine("***Caught HttpException***", ConsoleColor.Red);
+					MyLogger.WriteException(httpException);
+					MyLogger.WriteLine("***Breaking out of main loop***", ConsoleColor.Yellow);
+					break;
+				} catch (Exception ex) {
                     MyLogger.WriteLine("***CAUGHT TOP LEVEL EXCEPTION***", ConsoleColor.DarkMagenta);
                     MyLogger.WriteException(ex);
                 }
