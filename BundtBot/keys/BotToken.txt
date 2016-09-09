@@ -1,0 +1,1 @@
+Bot <your bot token here | get from https://discordapp.com/developers/applications/me>
