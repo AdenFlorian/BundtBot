@@ -97,6 +97,18 @@
     <StartupObject>BundtBot.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Discord.Net, Version=0.9.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.0.9.4\lib\net45\Discord.Net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Discord.Net.Audio, Version=0.9.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Audio.0.9.4\lib\net45\Discord.Net.Audio.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Discord.Net.Commands, Version=0.9.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Commands.0.9.4\lib\net45\Discord.Net.Commands.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.4.9.5, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
       <Private>True</Private>
@@ -212,7 +224,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include=".gitignore" />
+    <None Include=".gitignore" />
     <Content Include="ffmpeg.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -231,26 +243,9 @@
     <Content Include="opus.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="version.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="youtube-dl.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\Discord.Net\src\Discord.Net.Audio.Net45\Discord.Net.Audio.csproj">
-      <Project>{7bfef748-b934-4621-9b11-6302e3a9f6b3}</Project>
-      <Name>Discord.Net.Audio</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Discord.Net\src\Discord.Net.Commands.Net45\Discord.Net.Commands.csproj">
-      <Project>{1b5603b4-6f8f-4289-b945-7baae523d740}</Project>
-      <Name>Discord.Net.Commands</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Discord.Net\src\Discord.Net.Net45\Discord.Net.csproj">
-      <Project>{8d71a857-879a-4a10-859e-5ff824ed6688}</Project>
-      <Name>Discord.Net</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

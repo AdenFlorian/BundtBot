@@ -1,26 +1,31 @@
-﻿using System;
+﻿using BundtBot.Utility;
+using NString;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
-using BundtBot.Utility;
-using NString;
 
 namespace BundtBot.Sound {
     class SoundBoard {
         const char Slash = '\\';
 
         readonly Random _random;
-        readonly string _basePath;
+        readonly DirectoryInfo _baseDirectory;
 
         public SoundBoard() {
             _random = new Random();
-            _basePath = @"C:\Users\Bundt\Desktop\All sound files\!categorized\";
-        }
+            _baseDirectory = new DirectoryInfo(ConfigurationManager.AppSettings["SoundBoardFolder"]);
+			_baseDirectory.Create();
+			_baseDirectory.CreateSubdirectory("default");
+		}
 
-        public SoundBoard(Random random, string basePath) {
+        public SoundBoard(Random random, DirectoryInfo baseDirectory) {
             _random = random;
-            _basePath = basePath;
-        }
+            _baseDirectory = baseDirectory;
+			_baseDirectory.Create();
+			_baseDirectory.CreateSubdirectory("default");
+		}
 
         /// <summary>
         /// Gets the path to a sound file by actor and sound names.
@@ -37,7 +42,7 @@ namespace BundtBot.Sound {
                 return false;
             }
 
-            soundFile = new FileInfo(_basePath + actorName + Slash + soundName + ".mp3");
+            soundFile = new FileInfo(_baseDirectory + actorName + Slash + soundName + ".mp3");
 
             Console.Write("looking for " + soundFile.FullName + "\t");
 
@@ -143,16 +148,16 @@ namespace BundtBot.Sound {
 
         /// <summary>Returns true if it found a match</summary>
         bool CheckActorName(ref string actorName) {
-            var actorDirectories = Directory.GetDirectories(_basePath);
+            var actorDirectories = _baseDirectory.GetDirectories().ToList().ConvertAll(x => x.Name);
 
-            if (actorDirectories.Length < 1) {
+            if (actorDirectories.Count < 1) {
                 throw new Exception("Expected at least one directory in directory");
             }
 
-            actorDirectories = actorDirectories.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToArray();
+			actorDirectories = actorDirectories.Select(str => str.Substring(str.LastIndexOf('\\') + 1)).ToList();
 
-            if (actorName == "#random") {
-                var num = _random.Next(0, actorDirectories.Length);
+			if (actorName == "#random") {
+                var num = _random.Next(0, actorDirectories.Count);
                 actorName = actorDirectories[num];
                 return true;
             }
@@ -189,7 +194,7 @@ namespace BundtBot.Sound {
 
         /// <summary>Returns true if it found a match</summary>
         bool CheckSoundName(ref string soundName, string actorName) {
-            var soundNames = Directory.GetFiles(_basePath + actorName);
+            var soundNames = Directory.GetFiles(_baseDirectory + actorName);
 
             if (soundNames.Length < 1) {
                 throw new Exception("Expected at least one file in directory");

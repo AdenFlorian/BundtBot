@@ -21,15 +21,7 @@ namespace BundtBot.Youtube {
             Finished = false;
             Percentage = 0;
 
-            // this is the path where you keep the binaries (ffmpeg, youtube-dl etc)
-            var binaryPath = ConfigurationManager.AppSettings["binaryfolder"];
-            if (string.IsNullOrEmpty(binaryPath)) {
-                throw new Exception("Cannot read 'binaryfolder' variable from app.config / web.config.");
-            }
-
             var arguments = string.Format($"--get-title {searchString}");  //--ignore-errors
-
-            var fullPathToEXE = System.IO.Path.Combine(binaryPath, "youtube-dl.exe"); ;
 
             // setup the process that will fire youtube-dl
             Process = new Process();
@@ -37,8 +29,7 @@ namespace BundtBot.Youtube {
             Process.StartInfo.RedirectStandardOutput = true;
             Process.StartInfo.RedirectStandardError = true;
             Process.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
-            Process.StartInfo.WorkingDirectory = System.IO.Path.GetDirectoryName(fullPathToEXE);
-            Process.StartInfo.FileName = System.IO.Path.GetFileName(fullPathToEXE);
+            Process.StartInfo.FileName = "youtube-dl.exe";
             Process.StartInfo.Arguments = arguments;
             Process.StartInfo.CreateNoWindow = false;
             Process.EnableRaisingEvents = true;

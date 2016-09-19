@@ -76,14 +76,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Discord.Net\src\Discord.Net.Commands.Net45\Discord.Net.Commands.csproj">
-      <Project>{1B5603B4-6F8F-4289-B945-7BAAE523D740}</Project>
-      <Name>Discord.Net.Commands</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Discord.Net\src\Discord.Net.Net45\Discord.Net.csproj">
-      <Project>{8D71A857-879A-4A10-859E-5FF824ED6688}</Project>
-      <Name>Discord.Net</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BundtBot\BundtBot.csproj">
       <Project>{cfbae8a8-52b3-4af0-8b73-cbdc243dbcd7}</Project>
       <Name>BundtBot</Name>
@@ -91,9 +83,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="keys\BotToken.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="version.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
