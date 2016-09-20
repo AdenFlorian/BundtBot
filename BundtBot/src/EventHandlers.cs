@@ -186,7 +186,7 @@ namespace BundtBot {
                 Title = $"{x.Item1}: {x.Item2}"
             };
 
-            var sound = new TrackRequest(track, e.Channel.Server.DefaultChannel, e.Channel) { TextUpdates = false };
+            var sound = new TrackRequest(track, e.Channel.Server.DefaultChannel, e.Channel, e.User) { TextUpdates = false };
             soundManager.EnqueueSound(sound);
         }
 

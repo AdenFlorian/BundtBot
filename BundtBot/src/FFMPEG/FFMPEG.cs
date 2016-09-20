@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Threading.Tasks;
 using BundtBot.Utility;
@@ -17,8 +16,9 @@ namespace BundtBot.FFMPEG {
         }
 
         static async Task<FileInfo> FFMPEGConvert2Async(FileSystemInfo fileToConvert, string extension) {
-            Contract.Requires<ArgumentNullException>(fileToConvert != null);
-            Contract.Requires<FileNotFoundException>(fileToConvert.Exists);
+			if (fileToConvert == null) throw new ArgumentNullException("fileToConvert");
+			if (fileToConvert.Exists == false) throw new FileNotFoundException("file must exist", "fileToConvert");
+
             var output = fileToConvert.FullName.Substring(0, fileToConvert.FullName.LastIndexOf('.')) + extension;
 
             var ffmpegProcess = new Process {

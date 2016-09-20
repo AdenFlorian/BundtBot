@@ -303,7 +303,7 @@ namespace BundtBot {
                         Title = $"{soundFile.Directory?.Name}: {soundFile.Name}"
                     };
 
-                    var sound = new Sound.TrackRequest(track, e.Channel, e.User.VoiceChannel);
+                    var sound = new Sound.TrackRequest(track, e.Channel, e.User.VoiceChannel, e.User);
 
                     try {
                         if (args.Count > 0) {
@@ -367,7 +367,7 @@ namespace BundtBot {
                         await RedownloadTrack(e, track, _songCacheFolder);
                     }
 
-                    var sound = new Sound.TrackRequest(track, e.Channel, voiceChannel) {
+                    var sound = new TrackRequest(track, e.Channel, voiceChannel, e.User) {
                         DeleteAfterPlay = false
                     };
 
@@ -428,7 +428,7 @@ namespace BundtBot {
                         Path = outputWAVFile.FullName
                     };
 
-                    var sound = new Sound.TrackRequest(track, e.Channel, voiceChannel) {
+                    var sound = new Sound.TrackRequest(track, e.Channel, voiceChannel, e.User) {
                         DeleteAfterPlay = true
                     };
 

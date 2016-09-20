@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
 using System.IO;
 using BundtBot.Models;
 using Discord;
@@ -16,6 +15,7 @@ namespace BundtBot.Sound {
         public Channel TextChannel { get; }
         /// <summary>The voice channel to play the track in.</summary>
         public Channel VoiceChannel { get; private set; }
+		public Discord.User Requestor { get; }
         #endregion
 
         #region Optional
@@ -34,19 +34,22 @@ namespace BundtBot.Sound {
         public bool TextUpdates = true;
         #endregion
 
-        /// <param name="track">Must not be null</param>
-        /// <param name="textChannel">Must not be null</param>
-        /// <param name="voiceChannel">Must not be null</param>
-        public TrackRequest(Track track, Channel textChannel, Channel voiceChannel) {
-            Contract.Requires<ArgumentNullException>(track != null);
-            Contract.Requires<FileNotFoundException>(File.Exists(track.Path), "Track.Path must point to a file that exists");
-            Contract.Requires<ArgumentNullException>(textChannel != null);
-            Contract.Requires<ArgumentException>(textChannel.Type == ChannelType.Text);
-            Contract.Requires<ArgumentNullException>(voiceChannel != null);
-            Contract.Requires<ArgumentException>(voiceChannel.Type == ChannelType.Voice);
-            Track = track;
+        /// <param name="track">Must not be null, and track path must exist</param>
+        /// <param name="textChannel">Must not be null, and must be a text channel</param>
+        /// <param name="voiceChannel">Must not be null, and must be a voice channel</param>
+        public TrackRequest(Track track, Channel textChannel, Channel voiceChannel, Discord.User requestor) {
+			if (track == null) throw new ArgumentNullException("track");
+			if (File.Exists(track.Path)) throw new FileNotFoundException("Track.Path must point to a file that exists", track.Path);
+			if (textChannel == null) throw new ArgumentNullException("textChannel");
+			if (textChannel.Type != ChannelType.Text) throw new ArgumentException("Must be a text channel", "textChannel");
+			if (voiceChannel == null) throw new ArgumentNullException("voiceChannel");
+			if (voiceChannel.Type != ChannelType.Voice) throw new ArgumentException("Must be a voice channel", "voiceChannel");
+			if (requestor == null) throw new ArgumentNullException("requestor");
+
+			Track = track;
             TextChannel = textChannel;
             VoiceChannel = voiceChannel;
+			Requestor = requestor;
         }
     }
 }
