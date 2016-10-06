@@ -39,7 +39,7 @@ namespace BundtBot.Sound {
         /// <param name="voiceChannel">Must not be null, and must be a voice channel</param>
         public TrackRequest(Track track, Channel textChannel, Channel voiceChannel, Discord.User requestor) {
 			if (track == null) throw new ArgumentNullException("track");
-			if (File.Exists(track.Path)) throw new FileNotFoundException("Track.Path must point to a file that exists", track.Path);
+			if (File.Exists(track.Path) == false) throw new FileNotFoundException("Track.Path must point to a file that exists", track.Path);
 			if (textChannel == null) throw new ArgumentNullException("textChannel");
 			if (textChannel.Type != ChannelType.Text) throw new ArgumentException("Must be a text channel", "textChannel");
 			if (voiceChannel == null) throw new ArgumentNullException("voiceChannel");
